@@ -29,6 +29,7 @@ model Task {
   grn           String
   mfgDate       String
   location      String
+  warehouse     String   @default("Main")
   samplingType  String
   totalSampling Int
   aql           String

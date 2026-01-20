@@ -41,10 +41,11 @@ export async function POST() {
                         receiver: inv.recordedBy,
                         issue: '-',
                         timestamp: inv.timestamp || new Date().toISOString(),
-                        iqcStatus: 'Pending',
+                        iqcStatus: 'Waiting IQ',
                         grn: '-', // Not in invoice
                         mfgDate: '-',
                         location: 'Receiving',
+                        warehouse: inv.warehouse || 'Main',
                         samplingType: 'Normal',
                         totalSampling: 0,
                         aql: '0.65',

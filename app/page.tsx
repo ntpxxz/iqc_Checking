@@ -1,9 +1,9 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Clock, CheckCircle2, AlertCircle, History, PackageCheck,
   CalendarRange, RefreshCw, Printer, Eye, Download, Save, Check,
-  Box, Truck, MapPin, User, ShieldCheck, Ban, XCircle, LayoutGrid, Loader2
+  Box, Truck, MapPin, User, ShieldCheck, Ban, XCircle, LayoutGrid, Loader2, Warehouse
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
@@ -78,17 +78,42 @@ export default function IQCDashboard() {
   const [showDateMenu, setShowDateMenu] = useState(false);
   const [showJudgmentDateMenu, setShowJudgmentDateMenu] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
 
-  // Hooks
-  const { tasks: processedTasks, filterText, setFilterText, dateRange, setDateRange, requestSort, removeTask } = useTasks();
+  // Hooks - Toast hook first so we can use addToast in useTasks callback
+  const { toasts, addToast } = useToast();
+
+  // New task notification callback
+  const handleNewTasks = useCallback((count: number, newTasks: Task[]) => {
+    // Play notification sound
+    try {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(() => { });
+    } catch (e) {
+      // Fallback: Use browser notification API if available
+    }
+
+    // Show toast notification
+    if (count === 1) {
+      const task = newTasks[0];
+      addToast(`📦 New task: ${task.part} from ${task.vendor}`, 'warning');
+    } else {
+      addToast(`📦 ${count} new tasks incoming!`, 'warning');
+    }
+
+    // Update notification count
+    setNotificationCount(prev => prev + count);
+  }, [addToast]);
+
+  const { tasks: processedTasks, filterText, setFilterText, dateRange, setDateRange, requestSort, removeTask, warehouseFilter, setWarehouseFilter, warehouses } = useTasks({ onNewTasks: handleNewTasks });
   const { history: recentHistory, addHistoryItem } = useHistory();
   const { results: processedJudgmentResults, filterText: judgmentFilterText, setFilterText: setJudgmentFilterText, dateRange: judgmentDateRange, setDateRange: setJudgmentDateRange, requestSort: requestJudgmentSort, addResult } = useJudgment();
   const { settings: appSettings, updateSettings } = useSettings();
-  const { toasts, addToast } = useToast();
 
   // Column Visibility
   const columnLabels: Record<string, string> = {
-    urgent: 'Urgent', id: 'No', receivedAt: 'Received Date', inspectionType: 'Insp. Type',
+    urgent: 'Urgent', id: 'No', receivedAt: 'Received Date', warehouse: 'Warehouse', inspectionType: 'Insp. Type',
     invoice: 'Invoice', lotNo: 'Lot IQC', model: 'Model', partName: 'Part Type',
     part: 'Part No', rev: 'Rev.', vendor: 'Vendor', qty: 'Qty',
     samplingType: 'Sampling', totalSampling: 'Total Sample', aql: 'AQL',
@@ -273,7 +298,13 @@ export default function IQCDashboard() {
         <PrintModal isOpen={showPrintModal} onClose={() => setShowPrintModal(false)} onPrint={handlePrintLabels} isPrinting={isPrinting} itemCount={selectedItems.length} />
         <DetailModal item={showDetailModal} onClose={() => setShowDetailModal(null)} />
 
-        <Header setIsSidebarOpen={setIsSidebarOpen} filterText={filterText} setFilterText={setFilterText} />
+        <Header
+          setIsSidebarOpen={setIsSidebarOpen}
+          filterText={filterText}
+          setFilterText={setFilterText}
+          notificationCount={notificationCount}
+          onNotificationClick={() => setNotificationCount(0)}
+        />
 
         <main className="p-4 md:p-8 max-w-[1600px] mx-auto">
           <AnimatePresence mode="wait">
@@ -286,32 +317,39 @@ export default function IQCDashboard() {
                   <StatCard label="Avg Time/Lot" value="12m" icon={History} colorClass="bg-amber-50 text-amber-600" />
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="px-4 md:px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div className="flex gap-6 overflow-x-auto w-full md:w-auto no-scrollbar">
-                      <button onClick={() => setActiveTab('queue')} className={`pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'queue' ? 'border-yellow-400 text-yellow-600' : 'border-transparent text-slate-500'}`}>Inspection Queue <span className="ml-2 bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-xs">{processedTasks.length}</span></button>
-                      <button onClick={() => setActiveTab('history')} className={`pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'history' ? 'border-yellow-400 text-yellow-600' : 'border-transparent text-slate-500'}`}>Recent History</button>
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="px-6 py-2 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex gap-8 overflow-x-auto w-full md:w-auto no-scrollbar">
+                      <button onClick={() => setActiveTab('queue')} className={`py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap relative ${activeTab === 'queue' ? 'border-yellow-400 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+                        Inspection Queue
+                        <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] transition-colors ${activeTab === 'queue' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {processedTasks.length}
+                        </span>
+                      </button>
+                      <button onClick={() => setActiveTab('history')} className={`py-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'history' ? 'border-yellow-400 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+                        Recent History
+                      </button>
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto items-center relative">
+                    <div className="flex gap-3 w-full md:w-auto items-center">
                       {activeTab === 'queue' && (
                         <>
                           {selectedItems.length > 0 && (
                             <div className="flex items-center gap-2 mr-2 animate-in slide-in-from-right fade-in">
-                              <span className="text-xs font-bold text-slate-500">{selectedItems.length} selected</span>
-                              <button onClick={() => setShowPrintModal(true)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors" title="Print Labels"><Printer className="w-4 h-4" /></button>
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{selectedItems.length} selected</span>
+                              <button onClick={() => setShowPrintModal(true)} className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-100 transition-all" title="Print Labels"><Printer className="w-4 h-4" /></button>
                             </div>
                           )}
                           <div className="relative">
-                            <button onClick={() => setShowColumnMenu(!showColumnMenu)} className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => setShowColumnMenu(!showColumnMenu)} className={`p-2 border rounded-xl transition-all ${showColumnMenu ? 'bg-yellow-50 border-yellow-200 text-yellow-600' : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-500'}`}><Eye className="w-4 h-4" /></button>
                             {showColumnMenu && (
-                              <div className="absolute right-0 top-10 w-56 bg-white border border-slate-200 shadow-xl rounded-xl p-4 z-50">
-                                <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Toggle Columns</h4>
-                                <div className="max-h-60 overflow-y-auto space-y-1">
+                              <div className="absolute right-0 top-12 w-64 bg-white border border-slate-100 shadow-2xl rounded-2xl p-4 z-50 animate-in fade-in zoom-in-95">
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Toggle Columns</h4>
+                                <div className="max-h-64 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
                                   {Object.keys(visibleColumns).map(key => (
-                                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-50 p-1 rounded">
-                                      <input type="checkbox" checked={visibleColumns[key]} onChange={() => toggleColumn(key)} className="rounded text-yellow-600 focus:ring-yellow-400" />
-                                      <span className="truncate">{columnLabels[key] || key}</span>
+                                    <label key={key} className="flex items-center gap-3 text-xs font-medium cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors">
+                                      <input type="checkbox" checked={visibleColumns[key]} onChange={() => toggleColumn(key)} className="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400 w-4 h-4" />
+                                      <span className="text-slate-600">{columnLabels[key] || key}</span>
                                     </label>
                                   ))}
                                 </div>
@@ -319,18 +357,32 @@ export default function IQCDashboard() {
                             )}
                           </div>
                           <div className="relative">
-                            <button onClick={() => setShowDateMenu(!showDateMenu)} className={`p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 flex items-center gap-2 ${dateRange.start || dateRange.end ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : ''}`}><CalendarRange className="w-4 h-4" /> <span className="text-xs hidden md:inline">Date Range</span></button>
+                            <button onClick={() => setShowDateMenu(!showDateMenu)} className={`p-2.5 border rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${dateRange.start || dateRange.end ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-500'}`}><CalendarRange className="w-4 h-4" /> <span className="hidden md:inline">Date Range</span></button>
                             {showDateMenu && (
-                              <div className="absolute right-0 top-10 w-64 bg-white border border-slate-200 shadow-xl rounded-xl p-4 z-50">
-                                <div className="space-y-3">
-                                  <div><label className="text-xs font-bold text-slate-500 block mb-1">Start Date</label><input type="date" className="w-full border border-slate-200 rounded p-1.5 text-sm" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} /></div>
-                                  <div><label className="text-xs font-bold text-slate-500 block mb-1">End Date</label><input type="date" className="w-full border border-slate-200 rounded p-1.5 text-sm" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} /></div>
-                                  <div className="pt-2 border-t border-slate-100 flex justify-end">
-                                    <button onClick={resetDateRange} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Reset</button>
+                              <div className="absolute right-0 top-12 w-72 bg-white border border-slate-100 shadow-2xl rounded-2xl p-5 z-50 animate-in fade-in zoom-in-95">
+                                <div className="space-y-4">
+                                  <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Start Date</label><input type="date" className="w-full border border-slate-100 bg-slate-50 rounded-xl p-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-300 outline-none transition-all" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} /></div>
+                                  <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">End Date</label><input type="date" className="w-full border border-slate-100 bg-slate-50 rounded-xl p-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-300 outline-none transition-all" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} /></div>
+                                  <div className="pt-3 border-t border-slate-50 flex justify-end">
+                                    <button onClick={resetDateRange} className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> Reset Filters</button>
                                   </div>
                                 </div>
                               </div>
                             )}
+                          </div>
+                          {/* Warehouse Filter */}
+                          <div className="relative">
+                            <Warehouse className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <select
+                              value={warehouseFilter}
+                              onChange={(e) => setWarehouseFilter(e.target.value)}
+                              className={`pl-9 pr-4 py-2.5 border rounded-xl outline-none text-xs font-bold transition-all appearance-none cursor-pointer ${warehouseFilter !== 'all' ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-500'}`}
+                            >
+                              <option value="all">All Warehouses</option>
+                              {warehouses.map((wh) => (
+                                <option key={wh} value={wh}>{wh}</option>
+                              ))}
+                            </select>
                           </div>
                         </>
                       )}
@@ -479,34 +531,41 @@ export default function IQCDashboard() {
 
             {view === 'JUDGMENT' && (
               <motion.div key="judgment" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="space-y-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4 w-full md:w-auto">
-                    <h2 className="text-2xl font-bold text-slate-800">Judgment Result Sampling</h2>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1 md:flex-none">
-                        <Eye className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                        <input type="text" placeholder="Search results..." className="w-full md:w-64 pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={judgmentFilterText} onChange={(e) => setJudgmentFilterText(e.target.value)} />
-                      </div>
-                      <div className="relative">
-                        <button onClick={() => setShowJudgmentDateMenu(!showJudgmentDateMenu)} className={`p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 flex items-center gap-2 ${judgmentDateRange.start || judgmentDateRange.end ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : ''}`}><CalendarRange className="w-4 h-4" /> <span className="text-xs hidden md:inline">Date Range</span></button>
-                        {showJudgmentDateMenu && (
-                          <div className="absolute right-0 top-10 w-64 bg-white border border-slate-200 shadow-xl rounded-xl p-4 z-50">
-                            <div className="space-y-3">
-                              <div><label className="text-xs font-bold text-slate-500 block mb-1">Start Date</label><input type="date" className="w-full border border-slate-200 rounded p-1.5 text-sm" value={judgmentDateRange.start} onChange={(e) => setJudgmentDateRange({ ...judgmentDateRange, start: e.target.value })} /></div>
-                              <div><label className="text-xs font-bold text-slate-500 block mb-1">End Date</label><input type="date" className="w-full border border-slate-200 rounded p-1.5 text-sm" value={judgmentDateRange.end} onChange={(e) => setJudgmentDateRange({ ...judgmentDateRange, end: e.target.value })} /></div>
-                              <div className="pt-2 border-t border-slate-100 flex justify-end">
-                                <button onClick={resetJudgmentDateRange} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1"><RefreshCw className="w-3 h-3" /> Reset</button>
-                              </div>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800">Judgment Results</h2>
+                    <p className="text-sm text-slate-500 mt-1">View and export historical inspection judgments</p>
+                  </div>
+                  <div className="flex gap-3 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                      <Eye className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Filter results..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-yellow-100 focus:border-yellow-300 outline-none transition-all"
+                        value={judgmentFilterText}
+                        onChange={(e) => setJudgmentFilterText(e.target.value)}
+                      />
+                    </div>
+                    <div className="relative">
+                      <button onClick={() => setShowJudgmentDateMenu(!showJudgmentDateMenu)} className={`p-2.5 border rounded-xl transition-all flex items-center gap-2 text-xs font-bold ${judgmentDateRange.start || judgmentDateRange.end ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'border-slate-100 bg-white hover:bg-slate-50 text-slate-500'}`}><CalendarRange className="w-4 h-4" /> <span className="hidden md:inline">Date Range</span></button>
+                      {showJudgmentDateMenu && (
+                        <div className="absolute right-0 top-12 w-72 bg-white border border-slate-100 shadow-2xl rounded-2xl p-5 z-50 animate-in fade-in zoom-in-95">
+                          <div className="space-y-4">
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Start Date</label><input type="date" className="w-full border border-slate-100 bg-slate-50 rounded-xl p-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-300 outline-none transition-all" value={judgmentDateRange.start} onChange={(e) => setJudgmentDateRange({ ...judgmentDateRange, start: e.target.value })} /></div>
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">End Date</label><input type="date" className="w-full border border-slate-100 bg-slate-50 rounded-xl p-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-yellow-100 focus:border-yellow-300 outline-none transition-all" value={judgmentDateRange.end} onChange={(e) => setJudgmentDateRange({ ...judgmentDateRange, end: e.target.value })} /></div>
+                            <div className="pt-3 border-t border-slate-50 flex justify-end">
+                              <button onClick={resetJudgmentDateRange} className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5" /> Reset Filters</button>
                             </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
+                    <button onClick={() => setShowExportModal(true)} className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"><Download className="w-4 h-4" /> Export</button>
                   </div>
-                  <button onClick={() => setShowExportModal(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 hover:bg-indigo-700 transition-colors"><Download className="w-4 h-4" /> Export Report</button>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                   <div className="overflow-x-auto">
                     <JudgmentTable results={paginatedJudgment} onSort={requestJudgmentSort} />
                   </div>
@@ -516,56 +575,221 @@ export default function IQCDashboard() {
             )}
 
             {view === 'SETTINGS' && (
-              <motion.div key="settings" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="max-w-3xl mx-auto space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-slate-800">System Settings</h2>
-                  <button onClick={saveSettings} className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-white transition-all ${settingsSaved ? 'bg-emerald-500' : 'bg-slate-900 hover:bg-slate-800'}`}>
+              <motion.div key="settings" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }} className="max-w-5xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800">Settings</h2>
+                    <p className="text-sm text-slate-500 mt-1">Manage your application preferences and configurations</p>
+                  </div>
+                  <button onClick={saveSettings} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${settingsSaved ? 'bg-emerald-500 text-white' : 'bg-yellow-400 text-slate-900 hover:bg-yellow-500'}`}>
                     {settingsSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                     {settingsSaved ? 'Saved!' : 'Save Changes'}
                   </button>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-8">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">General Preferences</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div><p className="font-bold text-slate-700">Dark Mode</p><p className="text-xs text-slate-500">Switch between light and dark themes</p></div>
-                        <div className="w-12 h-6 bg-slate-200 rounded-full relative cursor-not-allowed"><div className="w-4 h-4 bg-white rounded-full absolute top-1 left-1 shadow-sm"></div></div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left Column - Profile & Preferences */}
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* Profile Card */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-sm">
+                          JD
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-slate-800 text-lg">Jane Doe</h3>
+                          <p className="text-sm text-slate-500">Quality Inspector</p>
+                          <p className="text-xs text-slate-400 mt-1">jane.doe@company.com</p>
+                        </div>
+                        <button className="px-4 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors">
+                          Edit Profile
+                        </button>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div><p className="font-bold text-slate-700">Email Notifications</p><p className="text-xs text-slate-500">Receive daily summaries via email</p></div>
-                        <div className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${appSettings.emailNotifications ? 'bg-indigo-600' : 'bg-slate-200'}`} onClick={() => updateSettings({ emailNotifications: !appSettings.emailNotifications })}>
-                          <div className={`w-4 h-4 bg-white rounded-full absolute top-1 shadow-sm transition-all ${appSettings.emailNotifications ? 'left-7' : 'left-1'}`}></div>
+
+                      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-slate-800">247</p>
+                          <p className="text-xs text-slate-500">Inspections</p>
+                        </div>
+                        <div className="text-center border-x border-slate-100">
+                          <p className="text-2xl font-bold text-emerald-600">98.2%</p>
+                          <p className="text-xs text-slate-500">Pass Rate</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-slate-800">12m</p>
+                          <p className="text-xs text-slate-500">Avg Time</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Inspection Standards */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                      <div className="flex items-center gap-2 mb-6">
+                        <div className="p-2 bg-yellow-50 rounded-xl">
+                          <AlertCircle className="w-5 h-5 text-yellow-600" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">Inspection Standards</h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Default AQL Level</label>
+                          <select
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50/50 focus:bg-white focus:border-yellow-300 focus:ring-2 focus:ring-yellow-100 outline-none transition-all"
+                            value={appSettings.defaultAql}
+                            onChange={(e) => updateSettings({ defaultAql: e.target.value })}
+                          >
+                            <option value="0.65">0.65 (Strict)</option>
+                            <option value="1.0">1.0 (Normal)</option>
+                            <option value="2.5">2.5 (Loose)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Sampling Standard</label>
+                          <select
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50/50 focus:bg-white focus:border-yellow-300 focus:ring-2 focus:ring-yellow-100 outline-none transition-all"
+                            value={appSettings.samplingStandard}
+                            onChange={(e) => updateSettings({ samplingStandard: e.target.value })}
+                          >
+                            <option>ISO 2859-1</option>
+                            <option>ANSI/ASQ Z1.4</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notification Settings */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                      <div className="flex items-center gap-2 mb-6">
+                        <div className="p-2 bg-blue-50 rounded-xl">
+                          <Eye className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">Notifications & Alerts</h3>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg border border-slate-100">
+                              <RefreshCw className="w-4 h-4 text-slate-500" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-700 text-sm">New Task Alerts</p>
+                              <p className="text-xs text-slate-500">Get notified when new tasks arrive</p>
+                            </div>
+                          </div>
+                          <div className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${appSettings.emailNotifications ? 'bg-yellow-400' : 'bg-slate-200'}`} onClick={() => updateSettings({ emailNotifications: !appSettings.emailNotifications })}>
+                            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm transition-all ${appSettings.emailNotifications ? 'left-5' : 'left-0.5'}`}></div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg border border-slate-100">
+                              <Download className="w-4 h-4 text-slate-500" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-700 text-sm">Email Summaries</p>
+                              <p className="text-xs text-slate-500">Receive daily inspection reports</p>
+                            </div>
+                          </div>
+                          <div className="w-11 h-6 bg-slate-200 rounded-full relative cursor-not-allowed">
+                            <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"></div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white rounded-lg border border-slate-100">
+                              <Printer className="w-4 h-4 text-slate-500" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-700 text-sm">Auto Print Labels</p>
+                              <p className="text-xs text-slate-500">Automatically print after inspection</p>
+                            </div>
+                          </div>
+                          <div className="w-11 h-6 bg-slate-200 rounded-full relative cursor-not-allowed">
+                            <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">Inspection Standards</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Default AQL Level</label>
-                        <select className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-white" value={appSettings.defaultAql} onChange={(e) => updateSettings({ defaultAql: e.target.value })}>
-                          <option value="0.65">0.65 (Strict)</option>
-                          <option value="1.0">1.0 (Normal)</option>
-                          <option value="2.5">2.5 (Loose)</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-1">Sampling Standard</label>
-                        <select className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-white" value={appSettings.samplingStandard} onChange={(e) => updateSettings({ samplingStandard: e.target.value })}>
-                          <option>ISO 2859-1</option>
-                          <option>ANSI/ASQ Z1.4</option>
-                        </select>
+                  {/* Right Column - Quick Actions */}
+                  <div className="space-y-6">
+                    {/* Quick Actions */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                      <h3 className="font-bold text-slate-800 mb-4">Quick Actions</h3>
+                      <div className="space-y-2">
+                        <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors text-left group">
+                          <div className="p-2 bg-yellow-50 rounded-lg group-hover:bg-yellow-100 transition-colors">
+                            <RefreshCw className="w-4 h-4 text-yellow-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-700 text-sm">Sync Data</p>
+                            <p className="text-xs text-slate-500">Refresh from warehouse</p>
+                          </div>
+                        </button>
+
+                        <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors text-left group">
+                          <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                            <Download className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-700 text-sm">Export Report</p>
+                            <p className="text-xs text-slate-500">Download as Excel</p>
+                          </div>
+                        </button>
+
+                        <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors text-left group">
+                          <div className="p-2 bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                            <History className="w-4 h-4 text-emerald-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-700 text-sm">View Logs</p>
+                            <p className="text-xs text-slate-500">Activity history</p>
+                          </div>
+                        </button>
                       </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">User Management</h3>
-                    <button className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-bold text-sm border border-indigo-100 hover:bg-indigo-100 transition-colors">Manage Users & Roles</button>
+                    {/* System Info */}
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+                      <h3 className="font-bold mb-4">System Info</h3>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Version</span>
+                          <span className="font-mono">v2.1.0</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Database</span>
+                          <span className="text-emerald-400 flex items-center gap-1">
+                            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                            Connected
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Last Sync</span>
+                          <span className="font-mono text-xs">Just now</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Help Card */}
+                    <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 bg-yellow-100 rounded-xl">
+                          <PackageCheck className="w-5 h-5 text-yellow-600" />
+                        </div>
+                        <h3 className="font-bold text-slate-800">Need Help?</h3>
+                      </div>
+                      <p className="text-sm text-slate-600 mb-4">Contact support for assistance with the IQC system.</p>
+                      <button className="w-full py-2.5 bg-yellow-400 text-slate-900 rounded-xl font-semibold text-sm hover:bg-yellow-500 transition-colors">
+                        Get Support
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

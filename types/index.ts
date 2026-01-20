@@ -17,6 +17,7 @@ export interface Task {
     grn: string;
     mfgDate: string;
     location: string;
+    warehouse: string;
     samplingType: string;
     totalSampling: number;
     aql: string;
@@ -27,12 +28,16 @@ export interface Task {
         minorLimit: number;
         code: string;
     };
+    sampleSize?: number;
+    majorLimit?: number;
+    minorLimit?: number;
+    code?: string;
 }
 
 export interface Toast {
     id: number;
     message: string;
-    type: 'info' | 'success' | 'error';
+    type: 'info' | 'success' | 'error' | 'warning';
 }
 
 export interface HistoryItem {
