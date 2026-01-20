@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id            String   @id @default(uuid())
+  receivedAt    String
+  inspectionType String
+  invoice       String
+  lotNo         String
+  model         String
+  partName      String
+  part          String
+  rev           String
+  vendor        String
+  qty           Int
+  receiver      String
+  issue         String
+  timestamp     String
+  iqcStatus     String
+  grn           String
+  mfgDate       String
+  location      String
+  samplingType  String
+  totalSampling Int
+  aql           String
+  urgent        Boolean
+  
+  // Requirements stored as JSON since it's a nested object
+  requirements  Json?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model InspectionResult {
+  id          String   @id @default(uuid())
+  date        String
+  lotIqc      String
+  partNo      String
+  supplier    String
+  shipLot     String
+  invoiceNo   String
+  rev         String
+  country     String
+  judgment    String
+  actionLot   String
+  remark      String
+  
+  // Additional fields for history tracking
+  time        String
+  inspector   String
+  qty         Int
+  status      String // RELEASED / QUARANTINE
+  partName    String
+
+  createdAt   DateTime @default(now())
+}
+
+model Settings {
+  id               String  @id @default(uuid())
+  emailNotifications Boolean @default(true)
+  autoPrintLabel   Boolean @default(false)
+  defaultAql       String  @default("0.65")
+  samplingStandard String  @default("ISO 2859-1")
+  language         String  @default("English")
+}

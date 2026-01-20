@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  iqcsamp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iqcsamp
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@pg-main:5432/iqc_db?schema=public
+      - WAREHOUSE_DB_URL=postgresql://postgres:postgres@pg-main:5432/warehouse_db?schema=public
+      - NEXTAUTH_SECRET=supersecret
+      - NEXTAUTH_URL=http://localhost:3000
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
