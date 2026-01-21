@@ -24,44 +24,38 @@ export const Header: React.FC<HeaderProps> = ({
     const notificationCount = notifications.length;
 
     return (
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
+        <header className="h-20 bg-white border-b-[3px] border-black sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
             <div className="flex items-center gap-4 w-full md:w-auto">
-                <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">
+                <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 border-2 border-black bg-primary hover:bg-black hover:text-white transition-colors">
                     <Menu className="w-5 h-5" />
                 </button>
 
                 {/* Search Bar */}
-                <div className="relative flex-1 md:w-80">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="relative flex-1 md:w-96">
+                    <Search className="w-5 h-5 text-black absolute left-4 top-1/2 -translate-y-1/2 z-10" />
                     <input
                         type="text"
-                        placeholder="Search parts, lots, or GRN..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50/80 hover:bg-slate-100/80 focus:bg-white outline-none text-sm font-medium border border-slate-100 focus:border-yellow-300 focus:ring-2 focus:ring-yellow-100 rounded-xl transition-all text-slate-700 placeholder:text-slate-400"
+                        placeholder="SEARCH PARTS, LOTS..."
+                        className="w-full pl-12 pr-4 py-3 bg-white border-[3px] border-black focus:bg-primary focus:shadow-[4px_4px_0px_black] focus:-translate-x-1 focus:-translate-y-1 outline-none text-sm font-black uppercase tracking-wider transition-all placeholder:text-black/40"
                         value={filterText}
                         onChange={(e) => setFilterText(e.target.value)}
                     />
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-6">
                 {/* Notification Bell */}
                 <div className="relative">
                     <button
-                        onClick={() => {
-                            setShowNotifications(!showNotifications);
-                            if (!showNotifications) {
-                                // We don't call onNotificationClick here anymore to avoid clearing immediately
-                                // Or we can call it to mark as read but keep the items
-                            }
-                        }}
-                        className="p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all relative"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className={`p-3 border-[3px] border-black transition-all relative ${showNotifications ? 'bg-black text-white' : 'bg-white hover:bg-primary hover:shadow-[4px_4px_0px_black] hover:-translate-x-1 hover:-translate-y-1'}`}
                     >
-                        <Bell className="w-5 h-5" />
+                        <Bell className="w-6 h-6" />
                         {notificationCount > 0 && (
                             <motion.span
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-slate-900 text-[11px] font-bold rounded-full flex items-center justify-center shadow-md border-2 border-white z-10"
+                                className="absolute -top-2 -right-2 w-6 h-6 bg-accent text-white text-[12px] font-black border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0px_black]"
                             >
                                 {notificationCount > 9 ? '9+' : notificationCount}
                             </motion.span>
@@ -74,42 +68,42 @@ export const Header: React.FC<HeaderProps> = ({
                                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50"
+                                className="absolute right-0 top-16 w-80 bg-white border-[3px] border-black shadow-[8px_8px_0px_black] overflow-hidden z-50"
                             >
-                                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                                    <h3 className="font-bold text-slate-800 text-sm">Notifications</h3>
+                                <div className="px-4 py-4 border-b-[3px] border-black bg-secondary flex items-center justify-between">
+                                    <h3 className="font-black text-black text-sm uppercase tracking-widest">Notifications</h3>
                                     {notificationCount > 0 && (
                                         <button
                                             onClick={() => {
                                                 onNotificationClick?.();
                                                 setShowNotifications(false);
                                             }}
-                                            className="text-[10px] font-bold text-yellow-600 hover:text-yellow-700 uppercase tracking-wider"
+                                            className="text-[10px] font-black text-black bg-white px-2 py-1 border-2 border-black hover:bg-accent hover:text-white uppercase tracking-wider"
                                         >
-                                            Clear All
+                                            Clear
                                         </button>
                                     )}
                                 </div>
                                 <div className="max-h-80 overflow-y-auto">
                                     {notificationCount === 0 ? (
-                                        <div className="py-8 text-center">
-                                            <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                            <p className="text-sm text-slate-400">No new notifications</p>
+                                        <div className="py-10 text-center bg-f0f0f0">
+                                            <Bell className="w-10 h-10 text-black/20 mx-auto mb-3" />
+                                            <p className="text-sm font-black text-black/40 uppercase">No new alerts</p>
                                         </div>
                                     ) : (
-                                        <div className="p-2 space-y-1">
+                                        <div className="p-2 space-y-2 bg-f0f0f0">
                                             {notifications.map((task, idx) => (
-                                                <div key={task.id + idx} className="p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
+                                                <div key={task.id + idx} className="p-4 bg-white border-[3px] border-black hover:bg-primary transition-colors cursor-pointer">
                                                     <div className="flex items-start gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                                                            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                                                        <div className="w-10 h-10 border-2 border-black bg-secondary flex items-center justify-center flex-shrink-0 shadow-[2px_2px_0px_black]">
+                                                            <div className="w-3 h-3 bg-black animate-pulse" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-slate-700 leading-tight">{task.part}</p>
-                                                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{task.vendor}</p>
-                                                            <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                                                                <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                                                {task.warehouse} • Just now
+                                                            <p className="text-sm font-black text-black leading-tight uppercase">{task.part}</p>
+                                                            <p className="text-[11px] font-bold text-black/60 mt-1 uppercase">{task.vendor}</p>
+                                                            <p className="text-[10px] font-black text-black/40 mt-2 flex items-center gap-2">
+                                                                <span className="w-2 h-2 bg-accent" />
+                                                                {task.warehouse} • NOW
                                                             </p>
                                                         </div>
                                                     </div>
@@ -124,18 +118,18 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Divider */}
-                <div className="hidden md:block w-px h-8 bg-slate-200"></div>
+                <div className="hidden md:block w-[3px] h-10 bg-black"></div>
 
                 {/* User Avatar */}
-                <button className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className="w-9 h-9 bg-gradient-to-br from-yellow-400 to-amber-500 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-sm">
+                <button className="flex items-center gap-3 p-1 border-[3px] border-transparent hover:border-black hover:bg-primary transition-all group">
+                    <div className="w-10 h-10 bg-accent border-[3px] border-black text-white flex items-center justify-center font-black text-sm shadow-[3px_3px_0px_black] group-hover:shadow-none group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-all">
                         JD
                     </div>
                     <div className="hidden md:block text-left">
-                        <p className="text-sm font-semibold text-slate-700">Jane Doe</p>
-                        <p className="text-xs text-slate-400">Inspector</p>
+                        <p className="text-sm font-black text-black uppercase tracking-tighter">Jane Doe</p>
+                        <p className="text-[10px] font-bold text-black/60 uppercase">Inspector</p>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-slate-400 hidden md:block" />
+                    <ChevronDown className="w-5 h-5 text-black hidden md:block" />
                 </button>
             </div>
         </header>

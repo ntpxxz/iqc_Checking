@@ -24,29 +24,80 @@ export function ResultView({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            className="flex flex-col items-center justify-center py-12 md:py-24 max-w-2xl mx-auto"
+            className="flex flex-col items-center justify-center py-12 md:py-24 max-w-3xl mx-auto"
         >
-            <div className="relative mb-12">
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", damping: 12 }} className={`w-32 h-32 rounded-[2.5rem] flex items-center justify-center shadow-2xl relative z-10 ${verdict === 'PASS' ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-rose-500 text-white shadow-rose-200'}`}>
-                    {verdict === 'PASS' ? <CheckCircle2 className="w-16 h-16" /> : <XCircle className="w-16 h-16" />}
+            <div className="relative mb-16">
+                <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.2, type: "spring", damping: 12 }}
+                    className={`w-40 h-40 border-[6px] border-black flex items-center justify-center shadow-[12px_12px_0px_black] relative z-10 ${verdict === 'PASS' ? 'bg-success text-black' : 'bg-accent text-white'}`}
+                >
+                    {verdict === 'PASS' ? <CheckCircle2 className="w-20 h-20" /> : <XCircle className="w-20 h-20" />}
                 </motion.div>
-                <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.1, 0.3] }} transition={{ duration: 4, repeat: Infinity }} className={`absolute inset-0 -m-4 rounded-[3rem] border-2 ${verdict === 'PASS' ? 'border-emerald-200' : 'border-rose-200'}`}></motion.div>
+                <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className={`absolute inset-0 -m-6 border-[4px] border-black ${verdict === 'PASS' ? 'bg-primary' : 'bg-accent/20'}`}
+                ></motion.div>
             </div>
 
-            <div className="text-center space-y-4 mb-12">
-                <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl font-black text-slate-900 tracking-tight">Inspection Complete</motion.h1>
-                <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-lg text-slate-500 font-medium">The lot has been successfully processed and marked as <br /><span className={`font-black uppercase tracking-wider ${verdict === 'PASS' ? 'text-emerald-600' : 'text-rose-600'}`}>{verdict === 'PASS' ? 'RELEASED TO WAREHOUSE' : 'QUARANTINED'}</span></motion.p>
+            <div className="text-center space-y-6 mb-16">
+                <motion.h1
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-6xl font-black text-black tracking-tighter uppercase"
+                >
+                    Inspection Complete
+                </motion.h1>
+                <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-lg text-black/60 font-black uppercase"
+                >
+                    The lot has been successfully processed and marked as <br />
+                    <span className={`inline-block mt-3 px-6 py-2 border-[3px] border-black font-black uppercase tracking-widest shadow-[4px_4px_0px_black] ${verdict === 'PASS' ? 'bg-success text-black' : 'bg-accent text-white'}`}>
+                        {verdict === 'PASS' ? 'RELEASED TO WAREHOUSE' : 'QUARANTINED'}
+                    </span>
+                </motion.p>
             </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm w-full mb-12 grid grid-cols-2 gap-8">
-                <div className="space-y-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-widest block">Lot Number</span><span className="font-mono font-bold text-slate-700">{activeJob?.lotNo}</span></div>
-                <div className="space-y-1 text-right"><span className="text-[10px] text-slate-400 font-black uppercase tracking-widest block">Timestamp</span><span className="font-bold text-slate-700">{new Date().toLocaleTimeString()}</span></div>
-                <div className="space-y-1"><span className="text-[10px] text-slate-400 font-black uppercase tracking-widest block">Part Number</span><span className="font-bold text-slate-700">{activeJob?.part}</span></div>
-                <div className="space-y-1 text-right"><span className="text-[10px] text-slate-400 font-black uppercase tracking-widest block">Inspector</span><span className="font-bold text-slate-700">Jane Doe</span></div>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="bg-white border-[3px] border-black p-10 shadow-[8px_8px_0px_black] w-full mb-16 grid grid-cols-2 gap-10"
+            >
+                <div className="space-y-2">
+                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Lot Number</span>
+                    <span className="font-black text-black text-lg uppercase">{activeJob?.lotNo}</span>
+                </div>
+                <div className="space-y-2 text-right">
+                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Timestamp</span>
+                    <span className="font-black text-black text-lg uppercase">{new Date().toLocaleTimeString()}</span>
+                </div>
+                <div className="space-y-2">
+                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Part Number</span>
+                    <span className="font-black text-black text-lg uppercase">{activeJob?.part}</span>
+                </div>
+                <div className="space-y-2 text-right">
+                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Inspector</span>
+                    <span className="font-black text-black text-lg uppercase">Jane Doe</span>
+                </div>
             </motion.div>
 
-            <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} onClick={returnToDashboard} className="bg-slate-900 text-white px-12 py-5 rounded-2xl font-black text-lg shadow-2xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center gap-3">
-                <LayoutGrid className="w-5 h-5" /> Return to Dashboard
+            <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ x: -4, y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={returnToDashboard}
+                className="bg-black text-white px-16 py-6 border-[4px] border-black font-black text-xl uppercase tracking-widest shadow-[8px_8px_0px_primary] hover:shadow-[12px_12px_0px_primary] transition-all flex items-center gap-4"
+            >
+                <LayoutGrid className="w-6 h-6" /> Return to Dashboard
             </motion.button>
         </motion.div>
     );

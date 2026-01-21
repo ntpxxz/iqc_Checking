@@ -13,21 +13,21 @@ interface StatCardProps {
 
 export const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, colorClass, trend }) => (
     <motion.div
-        whileHover={{ y: -2, boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }}
-        className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-start justify-between group transition-all duration-300 cursor-default"
+        whileHover={{ x: -4, y: -4, boxShadow: '8px 8px 0px #000000' }}
+        className="bg-white p-6 border-[3px] border-black shadow-[4px_4px_0px_black] flex items-start justify-between group transition-all cursor-default"
     >
         <div className="flex-1">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{label}</p>
-            <h3 className="text-2xl font-bold text-slate-800 mb-1">{value}</h3>
+            <p className="text-[11px] font-black text-black uppercase tracking-[0.1em] mb-3">{label}</p>
+            <h3 className="text-4xl font-black text-black mb-2 tracking-tighter">{value}</h3>
             {trend && (
-                <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-success border-2 border-black text-[10px] font-black uppercase">
                     <TrendingUp className="w-3 h-3" />
-                    <span>{trend} vs yesterday</span>
+                    <span>{trend} UP</span>
                 </div>
             )}
         </div>
-        <div className={`p-3 rounded-xl ${colorClass} transition-transform group-hover:scale-105`}>
-            <Icon className="w-5 h-5" />
+        <div className={`p-4 border-[3px] border-black shadow-[3px_3px_0px_black] bg-primary group-hover:bg-secondary transition-colors`}>
+            <Icon className="w-6 h-6 text-black" />
         </div>
     </motion.div>
 );

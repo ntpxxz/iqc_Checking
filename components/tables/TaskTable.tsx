@@ -17,15 +17,15 @@ interface TaskTableProps {
 const getStatusBadge = (status: string) => {
     switch (status) {
         case 'Waiting IQ':
-            return 'bg-amber-50 text-amber-600 border-amber-100';
+            return 'bg-primary text-black border-black';
         case 'In Progress':
-            return 'bg-blue-50 text-blue-600 border-blue-100';
+            return 'bg-secondary text-black border-black';
         case 'Completed':
-            return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            return 'bg-success text-black border-black';
         case 'Pending':
-            return 'bg-slate-50 text-slate-600 border-slate-100';
+            return 'bg-white text-black border-black';
         default:
-            return 'bg-blue-50 text-blue-600 border-blue-100';
+            return 'bg-secondary text-black border-black';
     }
 };
 
@@ -44,84 +44,84 @@ export const TaskTable: React.FC<TaskTableProps> = ({
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-0">
+            <table className="w-full text-left border-collapse">
                 <thead>
-                    <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-6 py-4 border-b border-slate-100 w-10 text-center">
-                            <input type="checkbox" className="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400 w-4 h-4" onChange={onSelectAll} checked={selectedItems.length === tasks.length && tasks.length > 0} />
+                    <tr className="text-[11px] font-black text-black uppercase tracking-[0.15em] bg-f0f0f0">
+                        <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black w-16 text-center">
+                            <input type="checkbox" className="border-[3px] border-black text-black focus:ring-0 w-5 h-5 rounded-none cursor-pointer" onChange={onSelectAll} checked={selectedItems.length === tasks.length && tasks.length > 0} />
                         </th>
-                        {visibleColumns.urgent && <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('urgent')}>Urgent</th>}
-                        {visibleColumns.id && <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('id')}>No <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>}
-                        {visibleColumns.receivedAt && <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('receivedAt')}>Received Date</th>}
-                        {visibleColumns.warehouse && <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('warehouse')}>Warehouse <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>}
-                        {visibleColumns.inspectionType && <th className="px-6 py-4 border-b border-slate-100">Insp. Type</th>}
-                        {visibleColumns.invoice && <th className="px-6 py-4 border-b border-slate-100">Invoice</th>}
-                        {visibleColumns.lotNo && <th className="px-6 py-4 border-b border-slate-100">Lot IQC</th>}
-                        {visibleColumns.part && <th className="px-6 py-4 border-b border-slate-100">Part No</th>}
-                        {visibleColumns.vendor && <th className="px-6 py-4 border-b border-slate-100">Vendor</th>}
-                        {visibleColumns.qty && <th className="px-6 py-4 border-b border-slate-100">Qty</th>}
-                        {visibleColumns.iqcStatus && <th className="px-6 py-4 border-b border-slate-100 sticky right-[100px] bg-white/95 backdrop-blur-sm">Status</th>}
-                        {visibleColumns.action && <th className="px-6 py-4 border-b border-slate-100 text-center sticky right-0 bg-white/95 backdrop-blur-sm">Action</th>}
+                        {visibleColumns.urgent && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black cursor-pointer hover:bg-primary transition-colors" onClick={() => onSort('urgent')}>Urgent</th>}
+                        {visibleColumns.id && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black cursor-pointer hover:bg-primary transition-colors" onClick={() => onSort('id')}>No <ArrowUpDown className="w-4 h-4 inline ml-1" /></th>}
+                        {visibleColumns.receivedAt && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black cursor-pointer hover:bg-primary transition-colors" onClick={() => onSort('receivedAt')}>Received</th>}
+                        {visibleColumns.warehouse && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black cursor-pointer hover:bg-primary transition-colors" onClick={() => onSort('warehouse')}>Warehouse <ArrowUpDown className="w-4 h-4 inline ml-1" /></th>}
+                        {visibleColumns.inspectionType && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">Type</th>}
+                        {visibleColumns.invoice && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">Invoice</th>}
+                        {visibleColumns.lotNo && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">Lot IQC</th>}
+                        {visibleColumns.part && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">Part Info</th>}
+                        {visibleColumns.vendor && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">Vendor</th>}
+                        {visibleColumns.qty && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">Qty</th>}
+                        {visibleColumns.iqcStatus && <th className="px-6 py-5 border-b-[3px] border-r-[3px] border-black sticky right-[120px] bg-f0f0f0 z-10">Status</th>}
+                        {visibleColumns.action && <th className="px-6 py-5 border-b-[3px] border-black text-center sticky right-0 bg-f0f0f0 z-10">Action</th>}
                     </tr>
                 </thead>
                 <tbody className="text-sm">
                     {tasks.map((task) => (
-                        <tr key={task.id} className="group hover:bg-slate-50/80 transition-colors">
-                            <td className="px-6 py-4 border-b border-slate-50 text-center">
-                                <input type="checkbox" className="rounded border-slate-300 text-yellow-500 focus:ring-yellow-400 w-4 h-4" checked={selectedItems.includes(task.id)} onChange={() => onSelectItem(task.id)} />
+                        <tr key={task.id} className="group hover:bg-primary/10 transition-colors">
+                            <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black text-center">
+                                <input type="checkbox" className="border-[3px] border-black text-black focus:ring-0 w-5 h-5 rounded-none cursor-pointer" checked={selectedItems.includes(task.id)} onChange={() => onSelectItem(task.id)} />
                             </td>
                             {visibleColumns.urgent && (
-                                <td className="px-6 py-4 border-b border-slate-50">
+                                <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">
                                     {task.urgent ? (
-                                        <div className="flex items-center gap-1.5 text-rose-500 font-bold">
+                                        <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-accent border-2 border-black text-white font-black text-[10px] uppercase shadow-[2px_2px_0px_black]">
                                             <AlertCircle className="w-3.5 h-3.5" />
-                                            <span>YES</span>
+                                            <span>URGENT</span>
                                         </div>
                                     ) : (
-                                        <span className="text-slate-400">No</span>
+                                        <span className="text-black/40 font-bold uppercase text-[10px]">Normal</span>
                                     )}
                                 </td>
                             )}
-                            {visibleColumns.id && <td className="px-6 py-4 border-b border-slate-50 font-mono text-slate-500 text-xs">{task.id.split('-')[0]}...</td>}
+                            {visibleColumns.id && <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black font-black text-black text-xs uppercase">{task.id.split('-')[0]}</td>}
                             {visibleColumns.receivedAt && (
-                                <td className="px-6 py-4 border-b border-slate-50 text-slate-600">
+                                <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black text-black font-bold uppercase text-xs">
                                     <div className="flex items-center gap-2">
-                                        <Clock className="w-3.5 h-3.5 text-slate-300" />
+                                        <Clock className="w-4 h-4 text-black" />
                                         {task.receivedAt}
                                     </div>
                                 </td>
                             )}
                             {visibleColumns.warehouse && (
-                                <td className="px-6 py-4 border-b border-slate-50 text-slate-600">
-                                    <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg text-xs font-medium">
-                                        <Warehouse className="w-3 h-3 text-slate-400" />
+                                <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-secondary border-2 border-black text-[10px] font-black uppercase shadow-[2px_2px_0px_black]">
+                                        <Warehouse className="w-3.5 h-3.5" />
                                         {task.warehouse || 'Main'}
                                     </div>
                                 </td>
                             )}
-                            {visibleColumns.inspectionType && <td className="px-6 py-4 border-b border-slate-50 text-slate-600">{task.inspectionType}</td>}
-                            {visibleColumns.invoice && <td className="px-6 py-4 border-b border-slate-50 text-slate-600 font-medium">{task.invoice}</td>}
-                            {visibleColumns.lotNo && <td className="px-6 py-4 border-b border-slate-50 font-mono text-slate-500 text-xs">{task.lotNo}</td>}
+                            {visibleColumns.inspectionType && <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black text-black font-bold uppercase text-xs">{task.inspectionType}</td>}
+                            {visibleColumns.invoice && <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black text-black font-black uppercase text-xs">{task.invoice}</td>}
+                            {visibleColumns.lotNo && <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black font-black text-black/60 text-xs uppercase">{task.lotNo}</td>}
                             {visibleColumns.part && (
-                                <td className="px-6 py-4 border-b border-slate-50">
-                                    <div className="font-bold text-slate-700">{task.part}</div>
-                                    <div className="text-[10px] text-slate-400 font-medium uppercase truncate max-w-[150px]">{task.partName}</div>
+                                <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black">
+                                    <div className="font-black text-black uppercase tracking-tight">{task.part}</div>
+                                    <div className="text-[10px] text-black/60 font-black uppercase truncate max-w-[150px] mt-1">{task.partName}</div>
                                 </td>
                             )}
-                            {visibleColumns.vendor && <td className="px-6 py-4 border-b border-slate-50 text-slate-600">{task.vendor}</td>}
-                            {visibleColumns.qty && <td className="px-6 py-4 border-b border-slate-50 text-slate-900 font-bold">{task.qty.toLocaleString()}</td>}
+                            {visibleColumns.vendor && <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black text-black font-bold uppercase text-xs">{task.vendor}</td>}
+                            {visibleColumns.qty && <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black text-black font-black text-base tracking-tighter">{task.qty.toLocaleString()}</td>}
                             {visibleColumns.iqcStatus && (
-                                <td className="px-6 py-4 border-b border-slate-50 sticky right-[100px] bg-white/95 backdrop-blur-sm group-hover:bg-slate-50/80 transition-colors">
-                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getStatusBadge(task.iqcStatus)}`}>
+                                <td className="px-6 py-5 border-b-[3px] border-r-[3px] border-black sticky right-[120px] bg-white group-hover:bg-primary/5 transition-colors z-10">
+                                    <span className={`inline-flex items-center px-3 py-1 border-[3px] text-[10px] font-black uppercase shadow-[3px_3px_0px_black] ${getStatusBadge(task.iqcStatus)}`}>
                                         {task.iqcStatus}
                                     </span>
                                 </td>
                             )}
                             {visibleColumns.action && (
-                                <td className="px-6 py-4 border-b border-slate-50 text-center sticky right-0 bg-white/95 backdrop-blur-sm group-hover:bg-slate-50/80 transition-colors">
+                                <td className="px-6 py-5 border-b-[3px] border-black text-center sticky right-0 bg-white group-hover:bg-primary/5 transition-colors z-10">
                                     <button
                                         onClick={() => onInspect(task)}
-                                        className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm hover:shadow-md active:scale-95"
+                                        className="bg-primary hover:bg-black hover:text-white border-[3px] border-black font-black px-5 py-2 text-[10px] uppercase transition-all shadow-[4px_4px_0px_black] hover:shadow-none hover:translate-x-1 hover:translate-y-1 active:scale-95"
                                     >
                                         Inspect
                                     </button>
