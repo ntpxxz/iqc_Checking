@@ -15,25 +15,32 @@ export const useTasks = (options?: UseTasksOptions) => {
     const [warehouseFilter, setWarehouseFilter] = useState<string>('all');
     const previousTaskIdsRef = useRef<Set<string>>(new Set());
     const isFirstFetchRef = useRef(true);
+    const isFetchingRef = useRef(false);
 
     const fetchTasks = useCallback(async () => {
+        if (isFetchingRef.current) return 0;
+        isFetchingRef.current = true;
         setLoading(true);
+        let syncedCount = 0;
         try {
             // 1. Trigger Sync
             const syncRes = await fetch('/api/sync', { method: 'POST' });
             const syncData = await syncRes.json();
+            syncedCount = syncData.syncedCount || 0;
 
             // 2. Fetch Tasks
             const res = await fetch('/api/tasks');
             const data: Task[] = await res.json();
 
-            // 3. Check for new tasks (only after first fetch)
-            if (!isFirstFetchRef.current && options?.onNewTasks) {
-                const currentIds = new Set(data.map(t => t.id));
+            // 3. Check for new tasks
+            if (options?.onNewTasks) {
                 const newTasks = data.filter(task => !previousTaskIdsRef.current.has(task.id));
 
                 if (newTasks.length > 0) {
-                    options.onNewTasks(newTasks.length, newTasks);
+                    // Only notify if it's not the very first fetch of the session
+                    if (!isFirstFetchRef.current) {
+                        options.onNewTasks(newTasks.length, newTasks);
+                    }
                 }
             }
 
@@ -42,18 +49,18 @@ export const useTasks = (options?: UseTasksOptions) => {
             isFirstFetchRef.current = false;
 
             setTasks(data);
+            return syncedCount;
         } catch (error) {
             console.error('Failed to fetch tasks:', error);
+            return 0;
         } finally {
             setLoading(false);
+            isFetchingRef.current = false;
         }
     }, [options]);
 
     useEffect(() => {
         fetchTasks();
-        // Poll every 30 seconds for new tasks
-        const interval = setInterval(fetchTasks, 30000);
-        return () => clearInterval(interval);
     }, [fetchTasks]);
 
     const requestSort = (key: string) => {

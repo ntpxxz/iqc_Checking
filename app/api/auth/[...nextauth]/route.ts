@@ -8,19 +8,19 @@ export const authOptions = {
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "text" },
+                username: { label: "Username", type: "text" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
+                if (!credentials?.username || !credentials?.password) {
                     return null;
                 }
 
                 try {
                     // Check user against Warehouse DB 'User' table
                     const result = await warehouseDb.query(
-                        `SELECT * FROM "User" WHERE email = $1`,
-                        [credentials.email]
+                        `SELECT * FROM "User" WHERE name = $1`,
+                        [credentials.username]
                     );
 
                     const user = result.rows[0];

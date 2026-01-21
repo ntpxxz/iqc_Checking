@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { JudgmentResult } from '@/types';
 
 const INITIAL_RESULTS: JudgmentResult[] = [
@@ -9,10 +9,28 @@ const INITIAL_RESULTS: JudgmentResult[] = [
 ];
 
 export const useJudgment = () => {
-    const [results, setResults] = useState<JudgmentResult[]>(INITIAL_RESULTS);
+    const [results, setResults] = useState<JudgmentResult[]>([]);
+    const [loading, setLoading] = useState(true);
     const [filterText, setFilterText] = useState('');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [sortConfig, setSortConfig] = useState<{ key: string | null, direction: 'ascending' | 'descending' }>({ key: null, direction: 'ascending' });
+
+    const fetchResults = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/inspections');
+            const data = await res.json();
+            setResults(data);
+        } catch (error) {
+            console.error('Failed to fetch judgment results:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchResults();
+    }, []);
 
     const requestSort = (key: string) => {
         let direction: 'ascending' | 'descending' = 'ascending';
@@ -65,17 +83,34 @@ export const useJudgment = () => {
         return sortableItems;
     }, [results, filterText, sortConfig, dateRange]);
 
-    const addResult = (result: JudgmentResult) => {
-        setResults(prev => [result, ...prev]);
+    const addResult = async (result: any) => {
+        try {
+            const res = await fetch('/api/inspections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(result)
+            });
+            if (res.ok) {
+                const savedResult = await res.json();
+                setResults(prev => [savedResult, ...prev]);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to save judgment result:', error);
+            return false;
+        }
     };
 
     return {
         results: processedResults,
+        loading,
         filterText,
         setFilterText,
         dateRange,
         setDateRange,
         requestSort,
-        addResult
+        addResult,
+        refreshResults: fetchResults
     };
 };

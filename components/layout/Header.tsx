@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import { Menu, Search, Bell, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Task } from '@/types';
+
 interface HeaderProps {
     setIsSidebarOpen: (isOpen: boolean) => void;
     filterText: string;
     setFilterText: (text: string) => void;
-    notificationCount?: number;
+    notifications?: Task[];
     onNotificationClick?: () => void;
 }
 
@@ -15,10 +17,11 @@ export const Header: React.FC<HeaderProps> = ({
     setIsSidebarOpen,
     filterText,
     setFilterText,
-    notificationCount = 0,
+    notifications = [],
     onNotificationClick
 }) => {
     const [showNotifications, setShowNotifications] = useState(false);
+    const notificationCount = notifications.length;
 
     return (
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
@@ -46,7 +49,10 @@ export const Header: React.FC<HeaderProps> = ({
                     <button
                         onClick={() => {
                             setShowNotifications(!showNotifications);
-                            onNotificationClick?.();
+                            if (!showNotifications) {
+                                // We don't call onNotificationClick here anymore to avoid clearing immediately
+                                // Or we can call it to mark as read but keep the items
+                            }
                         }}
                         className="p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-all relative"
                     >
@@ -55,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
                             <motion.span
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-yellow-400 text-slate-900 text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm"
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 text-slate-900 text-[11px] font-bold rounded-full flex items-center justify-center shadow-md border-2 border-white z-10"
                             >
                                 {notificationCount > 9 ? '9+' : notificationCount}
                             </motion.span>
@@ -73,9 +79,15 @@ export const Header: React.FC<HeaderProps> = ({
                                 <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                                     <h3 className="font-bold text-slate-800 text-sm">Notifications</h3>
                                     {notificationCount > 0 && (
-                                        <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full">
-                                            {notificationCount} new
-                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                onNotificationClick?.();
+                                                setShowNotifications(false);
+                                            }}
+                                            className="text-[10px] font-bold text-yellow-600 hover:text-yellow-700 uppercase tracking-wider"
+                                        >
+                                            Clear All
+                                        </button>
                                     )}
                                 </div>
                                 <div className="max-h-80 overflow-y-auto">
@@ -85,11 +97,24 @@ export const Header: React.FC<HeaderProps> = ({
                                             <p className="text-sm text-slate-400">No new notifications</p>
                                         </div>
                                     ) : (
-                                        <div className="p-2">
-                                            <div className="p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
-                                                <p className="text-sm font-medium text-slate-700">New tasks available</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">Just now</p>
-                                            </div>
+                                        <div className="p-2 space-y-1">
+                                            {notifications.map((task, idx) => (
+                                                <div key={task.id + idx} className="p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                                                            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-700 leading-tight">{task.part}</p>
+                                                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{task.vendor}</p>
+                                                            <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                                                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                                                {task.warehouse} • Just now
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>

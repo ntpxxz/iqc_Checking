@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ClipboardList, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -19,12 +19,12 @@ export default function LoginPage() {
         try {
             const result = await signIn('credentials', {
                 redirect: false,
-                email,
+                username,
                 password,
             });
 
             if (result?.error) {
-                setError('Invalid email or password');
+                setError('Invalid username or password');
             } else {
                 router.push('/');
             }
@@ -54,14 +54,14 @@ export default function LoginPage() {
                     )}
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Username</label>
                         <input
-                            type="email"
+                            type="text"
                             required
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 outline-none transition-all"
-                            placeholder="name@company.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                         />
                     </div>
 

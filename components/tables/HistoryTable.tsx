@@ -36,11 +36,11 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ history, onItemClick
                             onClick={() => onItemClick(item)}
                         >
                             <td className="px-6 py-4 border-b border-slate-50">
-                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${item.status === 'RELEASED'
-                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                        : 'bg-rose-50 text-rose-600 border-rose-100'
+                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${item.status === 'REJECTED'
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                    : 'bg-rose-50 text-rose-600 border-rose-100'
                                     }`}>
-                                    {item.status === 'RELEASED' ? <CheckCircle2 className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                    {item.status === 'REJECTED' ? <CheckCircle2 className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
                                     {item.status}
                                 </div>
                             </td>
