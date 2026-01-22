@@ -1,64 +1,76 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface RejectModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: (remark: string) => void;
 }
 
-export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, onConfirm }) => (
-    <AnimatePresence>
-        {isOpen && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-                    onClick={onClose}
-                />
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-white rounded-[2.5rem] shadow-2xl max-w-sm w-full p-8 text-center relative z-10 border border-slate-100"
-                >
-                    <button
+export const RejectModal: React.FC<RejectModalProps> = ({ isOpen, onClose, onConfirm }) => {
+    const [remark, setRemark] = useState('');
+
+    const handleConfirm = () => {
+        onConfirm(remark);
+        setRemark(''); // Reset after confirm
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"
                         onClick={onClose}
-                        className="absolute right-6 top-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all"
+                    />
+                    <motion.div
+                        initial={{ scale: 0.98, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.98, opacity: 0, y: 10 }}
+                        className="bg-white shadow-2xl max-w-sm w-full p-8 text-center relative z-10 rounded-sm border border-[#EDEBE9]"
                     >
-                        <X className="w-5 h-5" />
-                    </button>
+                        <div className="w-16 h-16 bg-[#FDE7E9] text-[#A4262C] rounded-full flex items-center justify-center mx-auto mb-6">
+                            <AlertTriangle className="w-8 h-8" />
+                        </div>
 
-                    <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
-                        <AlertTriangle className="w-10 h-10" />
-                    </div>
+                        <h3 className="text-lg font-semibold text-[#323130] mb-2">Confirm Rejection</h3>
+                        <p className="text-sm text-[#605E5C] mb-6 leading-relaxed">
+                            Are you sure you want to mark this lot as <span className="font-semibold text-[#A4262C]">Quarantine</span>? This action will be logged in the system.
+                        </p>
 
-                    <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">Confirm Rejection</h3>
-                    <p className="text-slate-500 mb-8 font-medium leading-relaxed">
-                        Are you sure you want to mark this lot as <br />
-                        <span className="text-rose-600 font-black uppercase tracking-wider">Quarantine</span>?
-                    </p>
+                        <div className="mb-6 text-left">
+                            <label className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1">Rejection Remark</label>
+                            <textarea
+                                className="ms-input w-full h-24 resize-none"
+                                placeholder="Enter reason for rejection..."
+                                value={remark}
+                                onChange={(e) => setRemark(e.target.value)}
+                            />
+                        </div>
 
-                    <div className="flex flex-col gap-3">
-                        <button
-                            onClick={onConfirm}
-                            className="w-full py-4 rounded-2xl font-black text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-100 transition-all active:scale-95"
-                        >
-                            Yes, Reject Lot
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="w-full py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 transition-all"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </motion.div>
-            </div>
-        )}
-    </AnimatePresence>
-);
+                        <div className="flex flex-col gap-2">
+                            <button
+                                onClick={handleConfirm}
+                                disabled={!remark.trim()}
+                                className={`ms-button bg-[#A4262C] text-white hover:bg-[#841D22] h-10 ${!remark.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Reject Lot
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="ms-button ms-button-secondary h-10"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
+    );
+};

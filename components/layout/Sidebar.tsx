@@ -1,8 +1,10 @@
 'use client';
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, X, LayoutGrid, Gavel, Settings, LogOut, ChevronRight, HelpCircle, Users } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import {
+    LayoutDashboard, ClipboardCheck, History, Settings,
+    ChevronLeft, ChevronRight, Gavel, Package
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface SidebarProps {
     isSidebarOpen: boolean;
@@ -11,107 +13,76 @@ interface SidebarProps {
     setView: (view: string) => void;
 }
 
-const menuItems = [
-    { id: 'DASHBOARD', label: 'Dashboard', icon: LayoutGrid },
-    { id: 'JUDGMENT', label: 'Judgment Result', icon: Gavel },
-];
+export const Sidebar: React.FC<SidebarProps> = ({
+    isSidebarOpen,
+    isSidebarOpen: _unused, // Keep for compatibility if needed elsewhere
+    view,
+    setView
+}) => {
+    const menuItems = [
+        { id: 'DASHBOARD', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'INSPECT', label: 'Inspection', icon: ClipboardCheck },
+        { id: 'JUDGMENT', label: 'Judgment', icon: Gavel },
+        { id: 'HISTORY', label: 'History', icon: History },
+        { id: 'SETTINGS', label: 'Settings', icon: Settings },
+    ];
 
-const controlItems = [
-    { id: 'SETTINGS', label: 'Settings', icon: Settings },
-];
+    return (
+        <motion.aside
+            initial={false}
+            animate={{ width: isSidebarOpen ? 240 : 72 }}
+            className="bg-white border-r border-[#EDEBE9] flex flex-col h-screen sticky top-0 z-40 overflow-hidden"
+        >
+            <div className="flex-1 py-4 px-3 space-y-1">
+                {menuItems.map((item) => {
+                    const isActive = view === item.id;
+                    const Icon = item.icon;
 
-export const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, view, setView }) => (
-    <>
-        <AnimatePresence>
-            {isSidebarOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
-        </AnimatePresence>
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => setView(item.id)}
+                            className={`w-full flex items-center gap-3 px-3 h-11 rounded-lg transition-all relative group ${isActive
+                                    ? 'bg-[#ffe500] text-[#323130] shadow-sm'
+                                    : 'text-[#605E5C] hover:bg-[#F3F2F1] hover:text-[#323130]'
+                                }`}
+                        >
+                            <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-[#323130]' : 'group-hover:text-[#323130]'}`} />
 
-        <div className={`fixed left-0 top-0 h-screen bg-white flex flex-col z-50 transition-all duration-300 w-64 border-r-[3px] border-black ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-            {/* Logo Section */}
-            <div className="p-6 flex items-center justify-between border-b-[3px] border-black bg-primary">
-                <div className="flex items-center gap-3">
-                    <div className="bg-black p-2 border-2 border-white shadow-[2px_2px_0px_white]">
-                        <ClipboardList className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                        <span className="font-black text-xl text-black tracking-tighter uppercase">QualiTrack</span>
-                        <span className="block text-[10px] text-black font-bold -mt-1 uppercase">IQC System</span>
-                    </div>
-                </div>
-                <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-1.5 border-2 border-black bg-white hover:bg-black hover:text-white transition-colors">
-                    <X className="w-5 h-5" />
-                </button>
-            </div>
-
-            {/* Main Navigation */}
-            <div className="flex-1 py-6 px-4 overflow-y-auto space-y-6">
-                <div>
-                    <p className="px-2 mb-3 text-[11px] font-black text-black uppercase tracking-[0.2em]">Work</p>
-                    <nav className="space-y-2">
-                        {menuItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = view === item.id;
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => { setView(item.id); setIsSidebarOpen(false); }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 border-[3px] border-black transition-all text-sm font-black uppercase tracking-wider group ${isActive
-                                        ? 'bg-secondary shadow-[4px_4px_0px_black] -translate-x-1 -translate-y-1'
-                                        : 'bg-white hover:bg-primary hover:shadow-[4px_4px_0px_black] hover:-translate-x-1 hover:-translate-y-1'
-                                        }`}
+                            {isSidebarOpen && (
+                                <motion.span
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="text-sm font-semibold whitespace-nowrap"
                                 >
-                                    <Icon className="w-5 h-5" />
-                                    <span className="flex-1 text-left">{item.label}</span>
-                                    {isActive && <ChevronRight className="w-4 h-4" />}
-                                </button>
-                            );
-                        })}
-                    </nav>
-                </div>
+                                    {item.label}
+                                </motion.span>
+                            )}
 
-                <div>
-                    <p className="px-2 mb-3 text-[11px] font-black text-black uppercase tracking-[0.2em]">Control</p>
-                    <nav className="space-y-2">
-                        {controlItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = view === item.id;
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => { setView(item.id); setIsSidebarOpen(false); }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 border-[3px] border-black transition-all text-sm font-black uppercase tracking-wider group ${isActive
-                                        ? 'bg-secondary shadow-[4px_4px_0px_black] -translate-x-1 -translate-y-1'
-                                        : 'bg-white hover:bg-primary hover:shadow-[4px_4px_0px_black] hover:-translate-x-1 hover:-translate-y-1'
-                                        }`}
-                                >
-                                    <Icon className="w-5 h-5" />
-                                    <span className="flex-1 text-left">{item.label}</span>
-                                    {isActive && <ChevronRight className="w-4 h-4" />}
-                                </button>
-                            );
-                        })}
-                    </nav>
-                </div>
+                            {isActive && (
+                                <motion.div
+                                    layoutId="active-pill"
+                                    className="absolute left-0 w-1 h-6 bg-[#323130] rounded-r-full"
+                                />
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Bottom Section */}
-            <div className="p-4 border-t-[3px] border-black bg-f0f0f0">
-                <button
-                    onClick={() => signOut()}
-                    className="w-full flex items-center gap-3 px-4 py-3 border-[3px] border-black bg-white hover:bg-accent hover:text-white transition-all text-sm font-black uppercase tracking-wider group hover:shadow-[4px_4px_0px_black] hover:-translate-x-1 hover:-translate-y-1"
-                >
-                    <LogOut className="w-5 h-5" />
-                    <span>Sign Out</span>
-                </button>
+            <div className="p-4 border-t border-[#EDEBE9]">
+                <div className={`flex items-center gap-3 px-2 ${!isSidebarOpen && 'justify-center'}`}>
+                    <div className="w-8 h-8 bg-[#F3F2F1] rounded-lg flex items-center justify-center">
+                        <Package className="w-4 h-4 text-[#605E5C]" />
+                    </div>
+                    {isSidebarOpen && (
+                        <div className="overflow-hidden">
+                            <p className="text-xs font-bold text-[#323130] truncate">Warehouse A</p>
+                            <p className="text-[10px] text-[#605E5C] truncate">Main Terminal</p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
-    </>
-);
+        </motion.aside>
+    );
+};

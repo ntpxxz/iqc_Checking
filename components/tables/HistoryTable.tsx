@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
-import { CheckCircle2, Ban, Truck, User, History, Calendar, Clock } from 'lucide-react';
+import { History, CheckCircle2, Ban, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { HistoryItem } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -16,67 +17,62 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({ history, onItemClick
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-0">
+            <table className="ms-table">
                 <thead>
-                    <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-6 py-4 border-b border-slate-100">Status</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Date & Time</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Lot ID</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Part Details</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Supplier</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Quantity</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Inspector</th>
+                    <tr>
+                        <th>Status</th>
+                        <th>Part Details</th>
+                        <th>Supplier</th>
+                        <th>Quantity</th>
+                        <th>Date & Time</th>
+                        <th>Inspector</th>
+                        <th className="text-right">Action</th>
                     </tr>
                 </thead>
-                <tbody className="text-sm">
+                <tbody>
                     {history.map((item, idx) => (
-                        <tr
+                        <motion.tr
                             key={idx}
-                            className="group hover:bg-slate-50/80 transition-colors cursor-pointer"
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2, delay: idx * 0.03 }}
+                            className="group cursor-pointer"
                             onClick={() => onItemClick(item)}
                         >
-                            <td className="px-6 py-4 border-b border-slate-50">
-                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${item.status === 'REJECTED'
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                    : 'bg-rose-50 text-rose-600 border-rose-100'
-                                    }`}>
-                                    {item.status === 'REJECTED' ? <CheckCircle2 className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                            <td>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${item.status === 'PASSED' ? 'bg-[#DFF6DD] text-[#107C41]' : 'bg-[#FDE7E9] text-[#A4262C]'}`}>
+                                    {item.status === 'PASSED' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
                                     {item.status}
-                                </div>
+                                </span>
                             </td>
-                            <td className="px-6 py-4 border-b border-slate-50">
+                            <td>
                                 <div className="flex flex-col">
-                                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-                                        <Calendar className="w-3 h-3 text-slate-300" />
-                                        {item.date}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                                        <Clock className="w-3 h-3 text-slate-300" />
-                                        {item.time}
-                                    </div>
+                                    <span className="font-bold text-[#323130]">{item.part}</span>
+                                    <span className="text-xs text-[#605E5C]">{item.partName}</span>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 border-b border-slate-50 font-mono text-xs text-slate-500">{item.lotNo}</td>
-                            <td className="px-6 py-4 border-b border-slate-50">
-                                <div className="font-bold text-slate-700">{item.part}</div>
-                                <div className="text-[10px] text-slate-400 font-medium uppercase truncate max-w-[150px]">{item.partName}</div>
-                            </td>
-                            <td className="px-6 py-4 border-b border-slate-50">
-                                <div className="flex items-center gap-2 text-slate-600">
-                                    <Truck className="w-3.5 h-3.5 text-slate-300" />
-                                    {item.vendor}
+                            <td className="text-[#323130] font-medium">{item.vendor}</td>
+                            <td className="font-bold text-[#323130]">{item.qty.toLocaleString()}</td>
+                            <td>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-[#323130]">{item.date}</span>
+                                    <span className="text-[10px] text-[#605E5C] font-bold uppercase tracking-wider">{item.time}</span>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 border-b border-slate-50 text-slate-900 font-bold">{item.qty.toLocaleString()}</td>
-                            <td className="px-6 py-4 border-b border-slate-50">
-                                <div className="flex items-center gap-2 text-slate-600">
-                                    <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-500">
-                                        {item.inspector.split(' ').map(n => n[0]).join('')}
+                            <td>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 bg-[#F3F2F1] rounded-lg flex items-center justify-center text-[10px] font-bold text-[#605E5C] border border-[#EDEBE9]">
+                                        {item.inspector.split(' ').map((n: string) => n[0]).join('')}
                                     </div>
-                                    {item.inspector}
+                                    <span className="text-sm font-medium text-[#323130]">{item.inspector}</span>
                                 </div>
                             </td>
-                        </tr>
+                            <td className="text-right">
+                                <button className="p-2 rounded-lg hover:bg-[#ffe500] hover:text-[#323130] text-[#605E5C] transition-all">
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </td>
+                        </motion.tr>
                     ))}
                 </tbody>
             </table>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import {
-    CheckCircle2, XCircle, LayoutGrid
+    LayoutGrid, FileCheck, FileX
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Task } from '@/types';
@@ -19,86 +19,52 @@ export function ResultView({
     returnToDashboard,
 }: ResultViewProps) {
     return (
-        <motion.div
-            key="result"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            className="flex flex-col items-center justify-center py-12 md:py-24 max-w-3xl mx-auto"
-        >
-            <div className="relative mb-16">
-                <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.2, type: "spring", damping: 12 }}
-                    className={`w-40 h-40 border-[6px] border-black flex items-center justify-center shadow-[12px_12px_0px_black] relative z-10 ${verdict === 'PASS' ? 'bg-success text-black' : 'bg-accent text-white'}`}
-                >
-                    {verdict === 'PASS' ? <CheckCircle2 className="w-20 h-20" /> : <XCircle className="w-20 h-20" />}
-                </motion.div>
-                <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className={`absolute inset-0 -m-6 border-[4px] border-black ${verdict === 'PASS' ? 'bg-primary' : 'bg-accent/20'}`}
-                ></motion.div>
-            </div>
-
-            <div className="text-center space-y-6 mb-16">
-                <motion.h1
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-6xl font-black text-black tracking-tighter uppercase"
-                >
-                    Inspection Complete
-                </motion.h1>
-                <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-lg text-black/60 font-black uppercase"
-                >
-                    The lot has been successfully processed and marked as <br />
-                    <span className={`inline-block mt-3 px-6 py-2 border-[3px] border-black font-black uppercase tracking-widest shadow-[4px_4px_0px_black] ${verdict === 'PASS' ? 'bg-success text-black' : 'bg-accent text-white'}`}>
-                        {verdict === 'PASS' ? 'RELEASED TO WAREHOUSE' : 'QUARANTINED'}
-                    </span>
-                </motion.p>
-            </div>
-
+        <div className="flex flex-col items-center justify-center py-12 max-w-2xl mx-auto fade-in">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="bg-white border-[3px] border-black p-10 shadow-[8px_8px_0px_black] w-full mb-16 grid grid-cols-2 gap-10"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="ms-card p-10 w-full flex flex-col items-center text-center bg-white border-t-8 border-t-[#ffe500]"
             >
-                <div className="space-y-2">
-                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Lot Number</span>
-                    <span className="font-black text-black text-lg uppercase">{activeJob?.lotNo}</span>
+                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center mb-8 shadow-inner ${verdict === 'PASS' ? 'bg-[#DFF6DD] text-[#107C41]' : 'bg-[#FDE7E9] text-[#A4262C]'}`}>
+                    {verdict === 'PASS' ? <FileCheck className="w-12 h-12" /> : <FileX className="w-12 h-12" />}
                 </div>
-                <div className="space-y-2 text-right">
-                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Timestamp</span>
-                    <span className="font-black text-black text-lg uppercase">{new Date().toLocaleTimeString()}</span>
-                </div>
-                <div className="space-y-2">
-                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Part Number</span>
-                    <span className="font-black text-black text-lg uppercase">{activeJob?.part}</span>
-                </div>
-                <div className="space-y-2 text-right">
-                    <span className="text-[11px] text-black/40 font-black uppercase tracking-widest block">Inspector</span>
-                    <span className="font-black text-black text-lg uppercase">Jane Doe</span>
-                </div>
-            </motion.div>
 
-            <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                whileHover={{ x: -4, y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={returnToDashboard}
-                className="bg-black text-white px-16 py-6 border-[4px] border-black font-black text-xl uppercase tracking-widest shadow-[8px_8px_0px_primary] hover:shadow-[12px_12px_0px_primary] transition-all flex items-center gap-4"
-            >
-                <LayoutGrid className="w-6 h-6" /> Return to Dashboard
-            </motion.button>
-        </motion.div>
+                <h1 className="text-3xl font-bold text-[#323130] mb-2">Inspection Complete</h1>
+                <p className="text-[#605E5C] mb-10">The result has been successfully logged and archived in the system.</p>
+
+                <div className={`w-full p-5 rounded-xl border-2 mb-10 ${verdict === 'PASS' ? 'bg-[#DFF6DD] border-[#107C41]/20 text-[#107C41]' : 'bg-[#FDE7E9] border-[#A4262C]/20 text-[#A4262C]'}`}>
+                    <p className="text-sm font-bold uppercase tracking-widest">
+                        {verdict === 'PASS' ? 'Lot Released to Warehouse' : 'Lot Quarantined'}
+                    </p>
+                </div>
+
+                <div className="w-full grid grid-cols-2 gap-8 text-left border-t border-[#EDEBE9] pt-10 mb-10">
+                    <div>
+                        <span className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1">Lot Number</span>
+                        <span className="font-mono text-sm font-bold text-[#323130]">{activeJob?.lotNo}</span>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1 text-right">Part Number</span>
+                        <span className="text-sm font-bold text-[#323130] block text-right">{activeJob?.part}</span>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1">Timestamp</span>
+                        <span className="text-sm font-bold text-[#323130]">{new Date().toLocaleTimeString()}</span>
+                    </div>
+                    <div>
+                        <span className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1 text-right">Inspector</span>
+                        <span className="text-sm font-bold text-[#323130] block text-right">Jane Doe</span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={returnToDashboard}
+                    className="ms-button ms-button-primary w-full h-12 rounded-xl text-base hover:scale-[1.02] active:scale-[0.98]"
+                >
+                    <LayoutGrid className="w-5 h-5" />
+                    Return to Dashboard
+                </button>
+            </motion.div>
+        </div>
     );
 }

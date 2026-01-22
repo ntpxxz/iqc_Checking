@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
-import { ArrowUpDown, Gavel, Calendar, Hash, Package, Truck, Globe, CheckCircle2, XCircle } from 'lucide-react';
+import { Gavel, CheckCircle2, Ban, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { JudgmentResult } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -11,71 +12,58 @@ interface JudgmentTableProps {
 
 export const JudgmentTable: React.FC<JudgmentTableProps> = ({ results, onSort }) => {
     if (results.length === 0) {
-        return <EmptyState message="No Judgments Found" subMessage="Try adjusting your filters." icon={Gavel} />;
+        return <EmptyState message="No Judgment Results" subMessage="Inspection results will be archived here." icon={Gavel} />;
     }
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-0">
+            <table className="ms-table">
                 <thead>
-                    <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('date')}>Date <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>
-                        <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('lotIqc')}>Lot IQC <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>
-                        <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('partNo')}>Part No <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>
-                        <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('supplier')}>Supplier <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>
-                        <th className="px-6 py-4 border-b border-slate-100">Invoice No.</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Country</th>
-                        <th className="px-6 py-4 border-b border-slate-100 cursor-pointer hover:text-slate-600 transition-colors" onClick={() => onSort('judgment')}>Judgment <ArrowUpDown className="w-3 h-3 inline ml-1" /></th>
-                        <th className="px-6 py-4 border-b border-slate-100">Action Lot</th>
-                        <th className="px-6 py-4 border-b border-slate-100">Remark</th>
+                    <tr>
+                        <th onClick={() => onSort('date')} className="cursor-pointer hover:bg-[#F3F2F1]">Date</th>
+                        <th onClick={() => onSort('lotIqc')} className="cursor-pointer hover:bg-[#F3F2F1]">Lot IQC</th>
+                        <th onClick={() => onSort('partNo')} className="cursor-pointer hover:bg-[#F3F2F1]">Part Details</th>
+                        <th onClick={() => onSort('supplier')} className="cursor-pointer hover:bg-[#F3F2F1]">Supplier</th>
+                        <th onClick={() => onSort('qty')} className="cursor-pointer hover:bg-[#F3F2F1]">Qty</th>
+                        <th onClick={() => onSort('judgment')} className="cursor-pointer hover:bg-[#F3F2F1]">Judgment</th>
+                        <th onClick={() => onSort('actionLot')} className="cursor-pointer hover:bg-[#F3F2F1]">Action</th>
+                        <th className="text-right">Inspector</th>
                     </tr>
                 </thead>
-                <tbody className="text-sm">
+                <tbody>
                     {results.map((item, idx) => (
-                        <tr key={idx} className="group hover:bg-slate-50/80 transition-colors">
-                            <td className="px-6 py-4 border-b border-slate-50 text-slate-600">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-3.5 h-3.5 text-slate-300" />
-                                    {item.date}
+                        <motion.tr
+                            key={idx}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2, delay: idx * 0.03 }}
+                        >
+                            <td className="text-[#323130] font-medium">{item.date}</td>
+                            <td className="font-mono text-xs font-bold text-[#605E5C]">{item.lotIqc}</td>
+                            <td>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-[#323130]">{item.partNo}</span>
+                                    <span className="text-[10px] text-[#605E5C] font-bold uppercase tracking-wider">{item.invoiceNo}</span>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 border-b border-slate-50 font-mono text-slate-500 text-xs">{item.lotIqc}</td>
-                            <td className="px-6 py-4 border-b border-slate-50">
-                                <div className="flex items-center gap-2">
-                                    <Package className="w-3.5 h-3.5 text-slate-300" />
-                                    <span className="font-bold text-slate-700">{item.partNo}</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 border-b border-slate-50 text-slate-600">
-                                <div className="flex items-center gap-2">
-                                    <Truck className="w-3.5 h-3.5 text-slate-300" />
-                                    {item.supplier}
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 border-b border-slate-50 font-medium text-slate-600">
-                                <div className="flex items-center gap-2">
-                                    <Hash className="w-3.5 h-3.5 text-slate-300" />
-                                    {item.invoiceNo}
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 border-b border-slate-50 text-slate-600">
-                                <div className="flex items-center gap-2">
-                                    <Globe className="w-3.5 h-3.5 text-slate-300" />
-                                    {item.country}
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 border-b border-slate-50">
-                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${item.judgment === 'PASS'
-                                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                        : 'bg-rose-50 text-rose-600 border-rose-100'
-                                    }`}>
-                                    {item.judgment === 'PASS' ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                            <td className="text-[#323130] font-medium">{item.supplier}</td>
+                            <td className="font-bold text-[#323130]">{item.qty.toLocaleString()}</td>
+                            <td>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${item.judgment === 'PASS' ? 'bg-[#DFF6DD] text-[#107C41]' : 'bg-[#FDE7E9] text-[#A4262C]'}`}>
+                                    {item.judgment === 'PASS' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
                                     {item.judgment}
+                                </span>
+                            </td>
+                            <td className="text-[10px] font-bold text-[#605E5C] uppercase tracking-widest">{item.actionLot}</td>
+                            <td className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                    <span className="text-sm font-medium text-[#323130]">{item.inspector}</span>
+                                    <div className="w-7 h-7 bg-[#F3F2F1] rounded-lg flex items-center justify-center text-[10px] font-bold text-[#605E5C] border border-[#EDEBE9]">
+                                        {item.inspector.split(' ').map((n: string) => n[0]).join('')}
+                                    </div>
                                 </div>
                             </td>
-                            <td className="px-6 py-4 border-b border-slate-50 text-slate-600 font-medium">{item.actionLot}</td>
-                            <td className="px-6 py-4 border-b border-slate-50 text-slate-400 italic text-xs truncate max-w-[150px]">{item.remark}</td>
-                        </tr>
+                        </motion.tr>
                     ))}
                 </tbody>
             </table>

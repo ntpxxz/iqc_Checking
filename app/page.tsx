@@ -1,79 +1,59 @@
 'use client';
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Components
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
-import { ToastContainer } from '@/components/ui/Toast';
-import { RejectModal } from '@/components/modals/RejectModal';
-import { PrintModal } from '@/components/modals/PrintModal';
-import { DetailModal } from '@/components/modals/DetailModal';
-
-// Feature Components
 import { DashboardView } from '@/components/features/dashboard/DashboardView';
 import { InspectionView } from '@/components/features/inspection/InspectionView';
 import { ResultView } from '@/components/features/inspection/ResultView';
-import { JudgmentView } from '@/components/features/judgment/JudgmentView';
+import { HistoryLayout } from '@/components/features/history/HistoryLayout';
 import { SettingsView } from '@/components/features/settings/SettingsView';
 
-// Hooks
+import { DetailModal } from '@/components/modals/DetailModal';
+import { RejectModal } from '@/components/modals/RejectModal';
+import { PrintModal } from '@/components/modals/PrintModal';
+import { ToastContainer } from '@/components/ui/Toast';
+
 import { useTasks } from '@/hooks/useTasks';
 import { useHistory } from '@/hooks/useHistory';
 import { useJudgment } from '@/hooks/useJudgment';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/hooks/useToast';
-
-// Types
 import { Task, HistoryItem } from '@/types';
 
-export default function IQCDashboard() {
-  // --- CORE STATE ---
-  const [view, setView] = useState('DASHBOARD');
-  const [activeTab, setActiveTab] = useState('queue');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export default function Page() {
   const { status } = useSession();
-  const router = useRouter();
+  const [view, setView] = useState('DASHBOARD');
+  const { toasts, addToast } = useToast();
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
-
-  // Inspection State
+  // Modals & Active State
   const [activeJob, setActiveJob] = useState<Task | null>(null);
   const [verdict, setVerdict] = useState<string | null>(null);
   const [manualVerdict, setManualVerdict] = useState<string | null>(null);
-
-  // Selection State
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-
-  // Modals State
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState<HistoryItem | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
-  // Pagination State
-  const [queuePage, setQueuePage] = useState(1);
-  const [historyPage, setHistoryPage] = useState(1);
-  const [judgmentPage, setJudgmentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  // UI State
+  // Dashboard State
+  const [activeTab, setActiveTab] = useState('queue');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [showDateMenu, setShowDateMenu] = useState(false);
   const [showJudgmentDateMenu, setShowJudgmentDateMenu] = useState(false);
-  const [settingsSaved, setSettingsSaved] = useState(false);
-  const [notifications, setNotifications] = useState<Task[]>([]);
 
-  // Hooks
-  const { toasts, addToast } = useToast();
+  // Pagination
+  const [queuePage, setQueuePage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [judgmentPage, setJudgmentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Notifications
+  const [notifications, setNotifications] = useState<Task[]>([]);
 
   const handleNewTasks = useCallback((count: number, newTasks: Task[]) => {
     try {
@@ -92,18 +72,38 @@ export default function IQCDashboard() {
   }, [addToast]);
 
   const taskOptions = useMemo(() => ({ onNewTasks: handleNewTasks }), [handleNewTasks]);
-  const { tasks: processedTasks, loading: dataLoading, filterText, setFilterText, dateRange, setDateRange, requestSort, removeTask, warehouseFilter, setWarehouseFilter, warehouses, refreshTasks } = useTasks(taskOptions);
+  const {
+    tasks: processedTasks,
+    loading: dataLoading,
+    filterText,
+    setFilterText,
+    dateRange,
+    setDateRange,
+    requestSort,
+    removeTask,
+    warehouseFilter,
+    setWarehouseFilter,
+    warehouses,
+    refreshTasks
+  } = useTasks(taskOptions);
+
   const { history: recentHistory, addHistoryItem } = useHistory();
-  const { results: processedJudgmentResults, filterText: judgmentFilterText, setFilterText: setJudgmentFilterText, dateRange: judgmentDateRange, setDateRange: setJudgmentDateRange, requestSort: requestJudgmentSort, addResult } = useJudgment();
+  const {
+    results: processedJudgmentResults,
+    filterText: judgmentFilterText,
+    setFilterText: setJudgmentFilterText,
+    dateRange: judgmentDateRange,
+    setDateRange: setJudgmentDateRange,
+    requestSort: requestJudgmentSort,
+    addResult
+  } = useJudgment();
+
   const { settings: appSettings, updateSettings } = useSettings();
 
   // Column Visibility
   const columnLabels: Record<string, string> = {
-    urgent: 'Urgent', id: 'No', receivedAt: 'Received Date', warehouse: 'Warehouse', inspectionType: 'Insp. Type',
-    invoice: 'Invoice', lotNo: 'Lot IQC', model: 'Model', partName: 'Part Type',
-    part: 'Part No', rev: 'Rev.', vendor: 'Vendor', qty: 'Qty',
-    samplingType: 'Sampling', totalSampling: 'Total Sample', aql: 'AQL',
-    receiver: 'Receiver', issue: 'Issue', timestamp: 'Timestamp', iqcStatus: 'Status', action: 'Action'
+    urgent: 'Urgent', id: 'ID', receivedAt: 'Received', warehouse: 'Warehouse',
+    part: 'Part No', partName: 'Part Name', qty: 'Qty', iqcStatus: 'Status'
   };
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
@@ -173,7 +173,7 @@ export default function IQCDashboard() {
       setActiveJob({ ...task, requirements: reqs });
       setManualVerdict(null);
       setView('INSPECT');
-    }, 800);
+    }, 400);
   };
 
   const handleRejectClick = () => {
@@ -181,12 +181,12 @@ export default function IQCDashboard() {
     setShowRejectModal(true);
   };
 
-  const confirmReject = () => {
-    submitInspection('FAIL');
+  const confirmReject = (remark: string) => {
+    submitInspection('FAIL', remark);
     setShowRejectModal(false);
   };
 
-  const submitInspection = async (finalVerdictOverride: string | null = null) => {
+  const submitInspection = async (finalVerdictOverride: string | null = null, remark: string = '-') => {
     const finalV = finalVerdictOverride || manualVerdict;
     if (!finalV || !activeJob) return;
 
@@ -206,10 +206,9 @@ export default function IQCDashboard() {
       country: '-',
       judgment: finalV,
       actionLot: finalV === 'PASS' ? 'Release to WH' : 'Hold',
-      remark: '-',
+      remark: remark,
       inspector: 'Jane Doe',
-      qty: activeJob.qty,
-      status: finalV === 'PASS' ? 'REJECTED' : 'QUARANTINE'
+      qty: activeJob.qty
     };
 
     await addResult(inspectionData);
@@ -220,7 +219,7 @@ export default function IQCDashboard() {
       partName: activeJob.partName,
       vendor: activeJob.vendor,
       qty: activeJob.qty,
-      status: inspectionData.status,
+      status: finalV === 'PASS' ? 'PASSED' : 'REJECTED',
       date: inspectionData.date,
       time: inspectionData.time,
       inspector: inspectionData.inspector
@@ -247,12 +246,6 @@ export default function IQCDashboard() {
     setView('DASHBOARD');
   };
 
-  const saveSettings = () => {
-    setSettingsSaved(true);
-    addToast('Settings saved successfully', 'success');
-    setTimeout(() => setSettingsSaved(false), 2000);
-  };
-
   // Pagination Logic
   const paginatedQueue = useMemo(() => {
     const start = (queuePage - 1) * itemsPerPage;
@@ -270,36 +263,42 @@ export default function IQCDashboard() {
   }, [processedJudgmentResults, judgmentPage]);
 
   if (status === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F8]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-[#ffe500]" />
+          <p className="text-sm font-bold text-[#605E5C]">Preparing Workspace...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900 md:pl-64 transition-colors duration-300 relative overflow-x-hidden">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-yellow-50/50 rounded-full blur-[120px]"></div>
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-blue-50/40 rounded-full blur-[100px]"></div>
-        <div className="absolute -bottom-[10%] left-[20%] w-[50%] h-[50%] bg-slate-100/50 rounded-full blur-[150px]"></div>
-      </div>
+    <div className="flex h-screen bg-[#FAF9F8] text-[#323130] overflow-hidden flex-col">
+      <Header
+        view={view}
+        setView={setView}
+        filterText={filterText}
+        setFilterText={setFilterText}
+        notifications={notifications}
+        onNotificationClick={() => setNotifications([])}
+      />
 
-      <div className="relative z-10">
-        <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} view={view} setView={setView} />
+      <main className="flex-1 overflow-y-auto p-6 lg:p-8 relative">
         <ToastContainer toasts={toasts} />
-
         <RejectModal isOpen={showRejectModal} onClose={() => setShowRejectModal(false)} onConfirm={confirmReject} />
         <PrintModal isOpen={showPrintModal} onClose={() => setShowPrintModal(false)} onPrint={handlePrintLabels} isPrinting={isPrinting} itemCount={selectedItems.length} />
         <DetailModal item={showDetailModal} onClose={() => setShowDetailModal(null)} />
 
-        <Header
-          setIsSidebarOpen={setIsSidebarOpen}
-          filterText={filterText}
-          setFilterText={setFilterText}
-          notifications={notifications}
-          onNotificationClick={() => setNotifications([])}
-        />
-
-        <main className="p-4 md:p-8 max-w-[1600px] mx-auto">
-          <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={view}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            className="h-full"
+          >
             {view === 'DASHBOARD' && (
               <DashboardView
                 processedTasks={processedTasks}
@@ -357,8 +356,13 @@ export default function IQCDashboard() {
               />
             )}
 
-            {view === 'JUDGMENT' && (
-              <JudgmentView
+            {view === 'HISTORY' && (
+              <HistoryLayout
+                recentHistory={paginatedHistory}
+                historyPage={historyPage}
+                setHistoryPage={setHistoryPage}
+                itemsPerPage={itemsPerPage}
+                setShowDetailModal={setShowDetailModal}
                 judgmentFilterText={judgmentFilterText}
                 setJudgmentFilterText={setJudgmentFilterText}
                 showJudgmentDateMenu={showJudgmentDateMenu}
@@ -371,22 +375,19 @@ export default function IQCDashboard() {
                 judgmentPage={judgmentPage}
                 setJudgmentPage={setJudgmentPage}
                 processedJudgmentResults={processedJudgmentResults}
-                itemsPerPage={itemsPerPage}
                 requestJudgmentSort={requestJudgmentSort}
               />
             )}
 
             {view === 'SETTINGS' && (
               <SettingsView
-                appSettings={appSettings}
-                updateSettings={updateSettings}
-                saveSettings={saveSettings}
-                settingsSaved={settingsSaved}
+                settings={appSettings}
+                setSettings={updateSettings}
               />
             )}
-          </AnimatePresence>
-        </main>
-      </div>
+          </motion.div>
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
