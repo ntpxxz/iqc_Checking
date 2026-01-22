@@ -2,16 +2,24 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, Ban, Calendar, Clock, User, Truck, Package, Hash, FileText } from 'lucide-react';
-import { HistoryItem } from '@/types';
+import { InspectionRecord } from '@/types';
 
 interface DetailModalProps {
-    item: HistoryItem | null;
+    item: InspectionRecord | null;
     onClose: () => void;
 }
 
-export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => (
-    <AnimatePresence>
-        {item && (
+export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
+    if (!item) return null;
+
+    const status = item.status || (item.judgment === 'PASS' ? 'PASSED' : 'REJECTED');
+    const isPassed = status === 'PASSED';
+    const lotNo = item.lotIqc;
+    const part = item.partNo;
+    const vendor = item.supplier;
+
+    return (
+        <AnimatePresence>
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -43,17 +51,17 @@ export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => (
                     {/* Content */}
                     <div className="p-6 space-y-6">
                         {/* Status Card */}
-                        <div className={`p-4 rounded-sm border flex justify-between items-center ${item.status === 'PASSED' ? 'bg-[#DFF6DD] border-[#107C41]/20 text-[#107C41]' : 'bg-[#FDE7E9] border-[#A4262C]/20 text-[#A4262C]'}`}>
+                        <div className={`p-4 rounded-sm border flex justify-between items-center ${isPassed ? 'bg-[#DFF6DD] border-[#107C41]/20 text-[#107C41]' : 'bg-[#FDE7E9] border-[#A4262C]/20 text-[#A4262C]'}`}>
                             <div>
                                 <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 opacity-80">Final Verdict</p>
                                 <div className="flex items-center gap-2 font-semibold text-xl">
-                                    {item.status === 'PASSED' ? <CheckCircle2 className="w-6 h-6" /> : <Ban className="w-6 h-6" />}
-                                    {item.status}
+                                    {isPassed ? <CheckCircle2 className="w-6 h-6" /> : <Ban className="w-6 h-6" />}
+                                    {status}
                                 </div>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 opacity-80">Lot Number</p>
-                                <p className="font-mono font-semibold text-sm">{item.lotNo}</p>
+                                <p className="font-mono font-semibold text-sm">{lotNo}</p>
                             </div>
                         </div>
 
@@ -61,21 +69,21 @@ export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => (
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-semibold text-[#605E5C] uppercase tracking-wider block">Part Details</label>
-                                <p className="text-sm font-semibold text-[#323130]">{item.part}</p>
+                                <p className="text-sm font-semibold text-[#323130]">{part}</p>
                                 <p className="text-xs text-[#605E5C]">{item.partName}</p>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-semibold text-[#605E5C] uppercase tracking-wider block">Supplier</label>
                                 <p className="text-sm font-semibold text-[#323130] flex items-center gap-1.5">
                                     <Truck className="w-3.5 h-3.5 text-[#605E5C]" />
-                                    {item.vendor}
+                                    {vendor}
                                 </p>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-semibold text-[#605E5C] uppercase tracking-wider block">Inspector</label>
                                 <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 bg-[#F3F2F1] rounded-full flex items-center justify-center text-[10px] font-semibold text-[#605E5C]">
-                                        {item.inspector.split(' ').map(n => n[0]).join('')}
+                                        {item.inspector.split(' ').map((n: string) => n[0]).join('')}
                                     </div>
                                     <p className="text-sm text-[#323130]">{item.inspector}</p>
                                 </div>
@@ -93,7 +101,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => (
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Clock className="w-3.5 h-3.5" />
-                                {item.time}
+                                {item.time || '00:00'}
                             </div>
                         </div>
                     </div>
@@ -109,6 +117,6 @@ export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => (
                     </div>
                 </motion.div>
             </div>
-        )}
-    </AnimatePresence>
-);
+        </AnimatePresence>
+    );
+};

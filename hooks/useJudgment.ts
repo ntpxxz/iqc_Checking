@@ -1,15 +1,9 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
-import { JudgmentResult } from '@/types';
-
-const INITIAL_RESULTS: JudgmentResult[] = [
-    { date: '14/01/2026', lotIqc: 'SEA525580', partNo: 'WIDGET-X-PRO', supplier: 'TechMfg Solutions', shipLot: 'SH-2026-001', invoiceNo: 'INV-99200', rev: 'A', country: 'Thailand', judgment: 'PASS', actionLot: 'Release to WH', remark: '-' },
-    { date: '14/01/2026', lotIqc: 'SEA525579', partNo: 'ALUMINUM-TUBE-2M', supplier: 'MetalWorks Inc', shipLot: 'SH-2026-002', invoiceNo: 'INV-MW-20', rev: 'B', country: 'China', judgment: 'FAIL', actionLot: 'Sort & Rework', remark: 'Dimension NG' },
-    { date: '12/01/2026', lotIqc: 'SEA525578', partNo: 'SCREW-M4-SS', supplier: 'Fastener World', shipLot: 'SH-2025-999', invoiceNo: 'INV-FW-008', rev: 'C', country: 'Vietnam', judgment: 'PASS', actionLot: 'Release to WH', remark: '-' },
-];
+import { InspectionRecord } from '@/types';
 
 export const useJudgment = () => {
-    const [results, setResults] = useState<JudgmentResult[]>([]);
+    const [results, setResults] = useState<InspectionRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [filterText, setFilterText] = useState('');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });

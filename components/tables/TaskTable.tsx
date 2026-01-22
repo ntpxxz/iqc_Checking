@@ -57,7 +57,10 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                             />
                         </th>
                         {visibleColumns.urgent && <th onClick={() => onSort('urgent')} className="cursor-pointer hover:bg-[#F3F2F1]">Priority</th>}
+                        {visibleColumns.invoice && <th onClick={() => onSort('invoice')} className="cursor-pointer hover:bg-[#F3F2F1]">Invoice No</th>}
                         {visibleColumns.part && <th onClick={() => onSort('part')} className="cursor-pointer hover:bg-[#F3F2F1]">Part Details</th>}
+                        {visibleColumns.part && <th onClick={() => onSort('lotIqc')} className="cursor-pointer hover:bg-[#F3F2F1]">Lot IQC</th>}
+
                         {visibleColumns.qty && <th onClick={() => onSort('qty')} className="cursor-pointer hover:bg-[#F3F2F1]">Quantity</th>}
                         {visibleColumns.receivedAt && <th onClick={() => onSort('receivedAt')} className="cursor-pointer hover:bg-[#F3F2F1]">Received</th>}
                         {visibleColumns.iqcStatus && <th onClick={() => onSort('iqcStatus')} className="cursor-pointer hover:bg-[#F3F2F1]">Status</th>}
@@ -92,12 +95,22 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                                     )}
                                 </td>
                             )}
+                            {visibleColumns.invoice && (
+                                <td className="font-mono text-xs font-bold text-[#605E5C]">
+                                    {task.invoice}
+                                </td>
+                            )}
                             {visibleColumns.part && (
                                 <td>
                                     <div className="flex flex-col">
                                         <span className="font-bold text-[#323130]">{task.part}</span>
                                         <span className="text-xs text-[#605E5C]">{task.partName}</span>
                                     </div>
+                                </td>
+                            )}
+                            {visibleColumns.qty && (
+                                <td className="font-bold text-[#323130]">
+                                    {task.qty.toLocaleString()}
                                 </td>
                             )}
                             {visibleColumns.qty && (
@@ -120,7 +133,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                                     </span>
                                 </td>
                             )}
-                            <td className="text-right">
+                            <td className="text-center">
                                 <button
                                     onClick={() => onInspect(task)}
                                     className="h-8 px-3 rounded-md bg-[#F3F2F1] text-[#323130] hover:bg-[#ffe500] transition-colors text-xs font-bold flex items-center gap-1 ml-auto"

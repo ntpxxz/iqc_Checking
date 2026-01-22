@@ -53,8 +53,9 @@ model InspectionResult {
   inspector String
   qty       Int
   status    String
-  partName  String
-  createdAt DateTime @default(now())
+  partName      String
+  samplingType  String   @default("Normal")
+  createdAt     DateTime @default(now())
 }
 
 model Settings {

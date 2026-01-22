@@ -40,23 +40,12 @@ export interface Toast {
     type: 'info' | 'success' | 'error' | 'warning';
 }
 
-export interface HistoryItem {
+export interface InspectionRecord {
     id: string;
-    lotNo: string;
-    part: string;
-    partName: string;
-    vendor: string;
-    qty: number;
-    status: string;
-    date: string;
-    time: string;
-    inspector: string;
-}
-
-export interface JudgmentResult {
     date: string;
     lotIqc: string;
     partNo: string;
+    partName: string;
     supplier: string;
     shipLot: string;
     invoiceNo: string;
@@ -65,6 +54,12 @@ export interface JudgmentResult {
     judgment: string;
     actionLot: string;
     remark: string;
+    time: string;
+    inspector: string;
+    qty: number;
+    status: string;
+    samplingType: string;
+    createdAt: string;
 }
 
 export interface AppSettings {

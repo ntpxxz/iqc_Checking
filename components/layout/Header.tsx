@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { signOut } from 'next-auth/react';
 import {
     Search, Bell, ChevronDown, Globe, Command,
     LayoutDashboard, ClipboardCheck, History, Settings
@@ -22,11 +23,10 @@ export const Header: React.FC<HeaderProps> = ({
     notifications,
     onNotificationClick
 }) => {
+    const [showUserMenu, setShowUserMenu] = React.useState(false);
     const navItems = [
         { id: 'DASHBOARD', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'INSPECT', label: 'Inspection', icon: ClipboardCheck },
         { id: 'HISTORY', label: 'History', icon: History },
-        { id: 'SETTINGS', label: 'Settings', icon: Settings },
     ];
 
     return (
@@ -48,8 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
                                 key={item.id}
                                 onClick={() => setView(item.id)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive
-                                        ? 'bg-[#F3F2F1] text-[#323130]'
-                                        : 'text-[#605E5C] hover:bg-[#F3F2F1] hover:text-[#323130]'
+                                    ? 'bg-[#F3F2F1] text-[#323130]'
+                                    : 'text-[#605E5C] hover:bg-[#F3F2F1] hover:text-[#323130]'
                                     }`}
                             >
                                 <Icon className={`w-4 h-4 ${isActive ? 'text-[#323130]' : 'text-[#605E5C]'}`} />
@@ -85,16 +85,43 @@ export const Header: React.FC<HeaderProps> = ({
                         )}
                     </button>
 
-                    <button className="flex items-center gap-3 pl-2 pr-3 py-1.5 hover:bg-[#F3F2F1] rounded-xl transition-all group border border-transparent hover:border-[#EDEBE9]">
-                        <div className="w-8 h-8 bg-[#ffe500] rounded-full flex items-center justify-center text-[#323130] font-bold text-xs shadow-sm border-2 border-white">
-                            JD
-                        </div>
-                        <div className="hidden md:block text-left">
-                            <p className="text-xs font-bold text-[#323130] leading-none">Jane Doe</p>
-                            <p className="text-[10px] text-[#605E5C] mt-0.5">Inspector</p>
-                        </div>
-                        <ChevronDown className="w-3.5 h-3.5 text-[#605E5C] group-hover:translate-y-0.5 transition-transform" />
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowUserMenu(!showUserMenu)}
+                            className="flex items-center gap-3 pl-2 pr-3 py-1.5 hover:bg-[#F3F2F1] rounded-xl transition-all group border border-transparent hover:border-[#EDEBE9]"
+                        >
+                            <div className="w-8 h-8 bg-[#ffe500] rounded-full flex items-center justify-center text-[#323130] font-bold text-xs shadow-sm border-2 border-white">
+                                JD
+                            </div>
+                            <div className="hidden md:block text-left">
+                                <p className="text-xs font-bold text-[#323130] leading-none">Jane Doe</p>
+                                <p className="text-[10px] text-[#605E5C] mt-0.5">Inspector</p>
+                            </div>
+                            <ChevronDown className="w-3.5 h-3.5 text-[#605E5C] group-hover:translate-y-0.5 transition-transform" />
+                        </button>
+
+                        {showUserMenu && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white border border-[#EDEBE9] shadow-xl z-50 rounded-lg py-1">
+                                <button
+                                    onClick={() => {
+                                        setView('SETTINGS');
+                                        setShowUserMenu(false);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-[#323130] hover:bg-[#F3F2F1] flex items-center gap-2"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    Settings
+                                </button>
+                                <div className="h-px bg-[#EDEBE9] my-1" />
+                                <button
+                                    onClick={() => signOut()}
+                                    className="w-full text-left px-4 py-2 text-sm text-[#A4262C] hover:bg-[#F3F2F1] flex items-center gap-2"
+                                >
+                                    <span>Sign out</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </header>

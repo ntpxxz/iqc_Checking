@@ -14,15 +14,13 @@ import { SettingsView } from '@/components/features/settings/SettingsView';
 
 import { DetailModal } from '@/components/modals/DetailModal';
 import { RejectModal } from '@/components/modals/RejectModal';
-import { PrintModal } from '@/components/modals/PrintModal';
 import { ToastContainer } from '@/components/ui/Toast';
 
 import { useTasks } from '@/hooks/useTasks';
-import { useHistory } from '@/hooks/useHistory';
 import { useJudgment } from '@/hooks/useJudgment';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/hooks/useToast';
-import { Task, HistoryItem } from '@/types';
+import { Task, InspectionRecord } from '@/types';
 
 export default function Page() {
   const { status } = useSession();
@@ -34,13 +32,10 @@ export default function Page() {
   const [verdict, setVerdict] = useState<string | null>(null);
   const [manualVerdict, setManualVerdict] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [showPrintModal, setShowPrintModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState<HistoryItem | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<any | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
 
   // Dashboard State
-  const [activeTab, setActiveTab] = useState('queue');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [showDateMenu, setShowDateMenu] = useState(false);
@@ -48,7 +43,6 @@ export default function Page() {
 
   // Pagination
   const [queuePage, setQueuePage] = useState(1);
-  const [historyPage, setHistoryPage] = useState(1);
   const [judgmentPage, setJudgmentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -87,7 +81,6 @@ export default function Page() {
     refreshTasks
   } = useTasks(taskOptions);
 
-  const { history: recentHistory, addHistoryItem } = useHistory();
   const {
     results: processedJudgmentResults,
     filterText: judgmentFilterText,
@@ -103,7 +96,7 @@ export default function Page() {
   // Column Visibility
   const columnLabels: Record<string, string> = {
     urgent: 'Urgent', id: 'ID', receivedAt: 'Received', warehouse: 'Warehouse',
-    part: 'Part No', partName: 'Part Name', qty: 'Qty', iqcStatus: 'Status'
+    invoice: 'Invoice No', part: 'Part No', partName: 'Part Name', qty: 'Qty', iqcStatus: 'Status'
   };
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
@@ -143,16 +136,6 @@ export default function Page() {
     } else {
       setSelectedItems([...selectedItems, id]);
     }
-  };
-
-  const handlePrintLabels = () => {
-    setIsPrinting(true);
-    setTimeout(() => {
-      setIsPrinting(false);
-      setShowPrintModal(false);
-      addToast(`${selectedItems.length} Labels sent to printer`, 'success');
-      setSelectedItems([]);
-    }, 2000);
   };
 
   const handleStartInspection = (task: Task) => {
@@ -208,22 +191,12 @@ export default function Page() {
       actionLot: finalV === 'PASS' ? 'Release to WH' : 'Hold',
       remark: remark,
       inspector: 'Jane Doe',
-      qty: activeJob.qty
+      qty: activeJob.qty,
+      status: finalV === 'PASS' ? 'PASSED' : 'REJECTED',
+      samplingType: activeJob.samplingType
     };
 
     await addResult(inspectionData);
-    addHistoryItem({
-      id: activeJob.id,
-      lotNo: activeJob.lotNo,
-      part: activeJob.part,
-      partName: activeJob.partName,
-      vendor: activeJob.vendor,
-      qty: activeJob.qty,
-      status: finalV === 'PASS' ? 'PASSED' : 'REJECTED',
-      date: inspectionData.date,
-      time: inspectionData.time,
-      inspector: inspectionData.inspector
-    });
 
     removeTask(activeJob.id);
     addToast(finalV === 'PASS' ? 'Inspection Passed' : 'Lot Rejected & Quarantined', finalV === 'PASS' ? 'success' : 'error');
@@ -251,11 +224,6 @@ export default function Page() {
     const start = (queuePage - 1) * itemsPerPage;
     return processedTasks.slice(start, start + itemsPerPage);
   }, [processedTasks, queuePage]);
-
-  const paginatedHistory = useMemo(() => {
-    const start = (historyPage - 1) * itemsPerPage;
-    return recentHistory.slice(start, start + itemsPerPage);
-  }, [recentHistory, historyPage]);
 
   const paginatedJudgment = useMemo(() => {
     const start = (judgmentPage - 1) * itemsPerPage;
@@ -287,7 +255,6 @@ export default function Page() {
       <main className="flex-1 overflow-y-auto p-6 lg:p-8 relative">
         <ToastContainer toasts={toasts} />
         <RejectModal isOpen={showRejectModal} onClose={() => setShowRejectModal(false)} onConfirm={confirmReject} />
-        <PrintModal isOpen={showPrintModal} onClose={() => setShowPrintModal(false)} onPrint={handlePrintLabels} isPrinting={isPrinting} itemCount={selectedItems.length} />
         <DetailModal item={showDetailModal} onClose={() => setShowDetailModal(null)} />
 
         <AnimatePresence mode="wait">
@@ -302,9 +269,7 @@ export default function Page() {
             {view === 'DASHBOARD' && (
               <DashboardView
                 processedTasks={processedTasks}
-                recentHistory={recentHistory}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
+                recentHistory={processedJudgmentResults}
                 selectedItems={selectedItems}
                 visibleColumns={visibleColumns}
                 toggleColumn={toggleColumn}
@@ -321,17 +286,12 @@ export default function Page() {
                 warehouses={warehouses}
                 dataLoading={dataLoading}
                 paginatedQueue={paginatedQueue}
-                paginatedHistory={paginatedHistory}
                 queuePage={queuePage}
                 setQueuePage={setQueuePage}
-                historyPage={historyPage}
-                setHistoryPage={setHistoryPage}
                 itemsPerPage={itemsPerPage}
                 handleSelectAll={handleSelectAll}
                 handleSelectItem={handleSelectItem}
                 handleStartInspection={handleStartInspection}
-                setShowPrintModal={setShowPrintModal}
-                setShowDetailModal={setShowDetailModal}
                 requestSort={requestSort}
                 refreshTasks={handleManualSync}
               />
@@ -358,13 +318,8 @@ export default function Page() {
 
             {view === 'HISTORY' && (
               <HistoryLayout
-                recentHistory={paginatedHistory}
-                historyPage={historyPage}
-                setHistoryPage={setHistoryPage}
                 itemsPerPage={itemsPerPage}
                 setShowDetailModal={setShowDetailModal}
-                judgmentFilterText={judgmentFilterText}
-                setJudgmentFilterText={setJudgmentFilterText}
                 showJudgmentDateMenu={showJudgmentDateMenu}
                 setShowJudgmentDateMenu={setShowJudgmentDateMenu}
                 judgmentDateRange={judgmentDateRange}
