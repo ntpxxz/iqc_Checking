@@ -23,6 +23,9 @@ interface JudgmentViewProps {
     itemsPerPage: number;
     requestJudgmentSort: (key: string) => void;
     setShowDetailModal: (item: InspectionRecord | null) => void;
+    selectedHistory: string[];
+    onSelectAllHistory: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSelectItemHistory: (id: string) => void;
 }
 
 export function JudgmentView({
@@ -39,6 +42,9 @@ export function JudgmentView({
     itemsPerPage,
     requestJudgmentSort,
     setShowDetailModal,
+    selectedHistory,
+    onSelectAllHistory,
+    onSelectItemHistory,
 }: JudgmentViewProps) {
     return (
         <div className="space-y-6 fade-in">
@@ -117,7 +123,14 @@ export function JudgmentView({
                 </div>
 
                 <div className="p-0">
-                    <JudgmentTable results={paginatedJudgment} onSort={requestJudgmentSort} onItemClick={setShowDetailModal} />
+                    <JudgmentTable
+                        results={paginatedJudgment}
+                        selectedItems={selectedHistory}
+                        onSelectAll={onSelectAllHistory}
+                        onSelectItem={onSelectItemHistory}
+                        onSort={requestJudgmentSort}
+                        onItemClick={setShowDetailModal}
+                    />
                 </div>
                 <div className="p-4 border-t border-[#EDEBE9] bg-[#FAF9F8]">
                     <PaginationFooter currentPage={judgmentPage} totalItems={processedJudgmentResults.length} itemsPerPage={itemsPerPage} onPageChange={setJudgmentPage} />

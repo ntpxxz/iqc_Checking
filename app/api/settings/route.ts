@@ -6,7 +6,11 @@ export async function GET() {
         const settings = await prisma.settings.findFirst();
         return NextResponse.json(settings || {});
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
+        console.error('Failed to fetch settings:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch settings', details: error instanceof Error ? error.message : 'Unknown error' },
+            { status: 500 }
+        );
     }
 }
 
@@ -20,6 +24,10 @@ export async function PUT(request: Request) {
         });
         return NextResponse.json(settings);
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+        console.error('Failed to update settings:', error);
+        return NextResponse.json(
+            { error: 'Failed to update settings', details: error instanceof Error ? error.message : 'Unknown error' },
+            { status: 500 }
+        );
     }
 }

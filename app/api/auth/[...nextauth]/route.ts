@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { warehouseDb } from "@/lib/warehouseDb";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const authOptions = {
@@ -17,17 +17,14 @@ export const authOptions = {
                 }
 
                 try {
-                    // Check user against Warehouse DB 'User' table
-                    const result = await warehouseDb.query(
-                        `SELECT * FROM "User" WHERE name = $1`,
-                        [credentials.username]
-                    );
+                    // Check user against local Prisma DB
+                    const user = await prisma.user.findUnique({
+                        where: { name: credentials.username }
+                    });
 
-                    const user = result.rows[0];
-
-                    if (user && bcrypt.compareSync(credentials.password, user.password)) {
+                    if (user && user.password && bcrypt.compareSync(credentials.password, user.password)) {
                         return {
-                            id: user.id.toString(),
+                            id: user.id,
                             name: user.name,
                             email: user.email,
                             role: user.role,
@@ -57,7 +54,8 @@ export const authOptions = {
     },
     pages: {
         signIn: '/login',
-    }
+    },
+    secret: process.env.NEXTAUTH_SECRET || 'supersecret-iqc-pro-2026',
 };
 
 const handler = NextAuth(authOptions);

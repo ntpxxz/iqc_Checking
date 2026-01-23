@@ -15,7 +15,6 @@ import { PaginationFooter } from '@/components/ui/Pagination';
 interface DashboardViewProps {
     processedTasks: Task[];
     recentHistory: InspectionRecord[];
-    selectedItems: string[];
     visibleColumns: Record<string, boolean>;
     toggleColumn: (col: string) => void;
     showColumnMenu: boolean;
@@ -34,8 +33,6 @@ interface DashboardViewProps {
     queuePage: number;
     setQueuePage: (page: number) => void;
     itemsPerPage: number;
-    handleSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleSelectItem: (id: string) => void;
     handleStartInspection: (task: Task) => void;
     requestSort: (key: string) => void;
     refreshTasks: () => void;
@@ -44,7 +41,6 @@ interface DashboardViewProps {
 export function DashboardView({
     processedTasks,
     recentHistory,
-    selectedItems,
     visibleColumns,
     toggleColumn,
     showColumnMenu,
@@ -63,8 +59,6 @@ export function DashboardView({
     queuePage,
     setQueuePage,
     itemsPerPage,
-    handleSelectAll,
-    handleSelectItem,
     handleStartInspection,
     requestSort,
     refreshTasks,
@@ -202,10 +196,7 @@ export function DashboardView({
                             >
                                 <TaskTable
                                     tasks={paginatedQueue}
-                                    selectedItems={selectedItems}
                                     visibleColumns={visibleColumns}
-                                    onSelectAll={handleSelectAll}
-                                    onSelectItem={handleSelectItem}
                                     onSort={requestSort}
                                     onInspect={handleStartInspection}
                                 />

@@ -7,10 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 
 interface TaskTableProps {
     tasks: Task[];
-    selectedItems: string[];
     visibleColumns: Record<string, boolean>;
-    onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSelectItem: (id: string) => void;
     onSort: (key: string) => void;
     onInspect: (task: Task) => void;
 }
@@ -32,10 +29,7 @@ const getStatusBadge = (status: string) => {
 
 export const TaskTable: React.FC<TaskTableProps> = ({
     tasks,
-    selectedItems,
     visibleColumns,
-    onSelectAll,
-    onSelectItem,
     onSort,
     onInspect
 }) => {
@@ -48,20 +42,13 @@ export const TaskTable: React.FC<TaskTableProps> = ({
             <table className="ms-table">
                 <thead>
                     <tr>
-                        <th className="w-10">
-                            <input
-                                type="checkbox"
-                                onChange={onSelectAll}
-                                checked={selectedItems.length === tasks.length && tasks.length > 0}
-                                className="w-4 h-4 rounded border-[#8A8886] text-[#ffe500] focus:ring-[#ffe500]"
-                            />
-                        </th>
                         {visibleColumns.urgent && <th onClick={() => onSort('urgent')} className="cursor-pointer hover:bg-[#F3F2F1]">Priority</th>}
                         {visibleColumns.invoice && <th onClick={() => onSort('invoice')} className="cursor-pointer hover:bg-[#F3F2F1]">Invoice No</th>}
                         {visibleColumns.part && <th onClick={() => onSort('part')} className="cursor-pointer hover:bg-[#F3F2F1]">Part Details</th>}
                         {visibleColumns.part && <th onClick={() => onSort('lotIqc')} className="cursor-pointer hover:bg-[#F3F2F1]">Lot IQC</th>}
 
                         {visibleColumns.qty && <th onClick={() => onSort('qty')} className="cursor-pointer hover:bg-[#F3F2F1]">Quantity</th>}
+                        {visibleColumns.samplingType && <th onClick={() => onSort('samplingType')} className="cursor-pointer hover:bg-[#F3F2F1]">Sampling</th>}
                         {visibleColumns.receivedAt && <th onClick={() => onSort('receivedAt')} className="cursor-pointer hover:bg-[#F3F2F1]">Received</th>}
                         {visibleColumns.iqcStatus && <th onClick={() => onSort('iqcStatus')} className="cursor-pointer hover:bg-[#F3F2F1]">Status</th>}
                         <th className="text-right">Action</th>
@@ -76,14 +63,6 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                             transition={{ duration: 0.2, delay: index * 0.03 }}
                             className="group"
                         >
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedItems.includes(task.id)}
-                                    onChange={() => onSelectItem(task.id)}
-                                    className="w-4 h-4 rounded border-[#8A8886] text-[#ffe500] focus:ring-[#ffe500]"
-                                />
-                            </td>
                             {visibleColumns.urgent && (
                                 <td>
                                     {task.urgent ? (
@@ -108,14 +87,19 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                                     </div>
                                 </td>
                             )}
-                            {visibleColumns.qty && (
-                                <td className="font-bold text-[#323130]">
-                                    {task.qty.toLocaleString()}
+                            {visibleColumns.part && (
+                                <td className="font-mono text-xs font-bold text-[#605E5C]">
+                                    {task.lotNo}
                                 </td>
                             )}
                             {visibleColumns.qty && (
                                 <td className="font-bold text-[#323130]">
                                     {task.qty.toLocaleString()}
+                                </td>
+                            )}
+                            {visibleColumns.samplingType && (
+                                <td className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider">
+                                    {task.samplingType}
                                 </td>
                             )}
                             {visibleColumns.receivedAt && (

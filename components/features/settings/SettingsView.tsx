@@ -3,6 +3,7 @@
 import React from 'react';
 import { Save } from 'lucide-react';
 import { AppSettings } from '@/types';
+import { UserManagement } from './UserManagement';
 
 interface SettingsViewProps {
     settings: AppSettings;
@@ -49,15 +50,11 @@ export function SettingsView({
                             <label className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider">Email Address</label>
                             <input type="email" className="ms-input w-full" defaultValue="jane.doe@example.com" />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider">User Role</label>
-                            <select className="ms-input w-full">
-                                <option value="admin">Administrator</option>
-                                <option value="user">Standard User</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
+
+                {/* User Management Section */}
+                <UserManagement />
             </div>
         </div>
     );

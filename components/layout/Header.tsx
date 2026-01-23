@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import {
     Search, Bell, ChevronDown, Globe, Command,
     LayoutDashboard, ClipboardCheck, History, Settings
@@ -23,11 +23,15 @@ export const Header: React.FC<HeaderProps> = ({
     notifications,
     onNotificationClick
 }) => {
+    const { data: session } = useSession();
     const [showUserMenu, setShowUserMenu] = React.useState(false);
     const navItems = [
         { id: 'DASHBOARD', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'HISTORY', label: 'History', icon: History },
     ];
+
+    const user = session?.user as any;
+    const initials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : '??';
 
     return (
         <header className="h-16 bg-white border-b border-[#EDEBE9] flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm">
@@ -91,14 +95,16 @@ export const Header: React.FC<HeaderProps> = ({
                             className="flex items-center gap-3 pl-2 pr-3 py-1.5 hover:bg-[#F3F2F1] rounded-xl transition-all group border border-transparent hover:border-[#EDEBE9]"
                         >
                             <div className="w-8 h-8 bg-[#ffe500] rounded-full flex items-center justify-center text-[#323130] font-bold text-xs shadow-sm border-2 border-white">
-                                JD
+                                {initials}
                             </div>
                             <div className="hidden md:block text-left">
-                                <p className="text-xs font-bold text-[#323130] leading-none">Jane Doe</p>
-                                <p className="text-[10px] text-[#605E5C] mt-0.5">Inspector</p>
+                                <p className="text-xs font-bold text-[#323130] leading-none">{user?.name || 'Unknown'}</p>
+                                <p className="text-[10px] text-[#605E5C] mt-0.5 capitalize">{user?.role || 'User'}</p>
                             </div>
                             <ChevronDown className="w-3.5 h-3.5 text-[#605E5C] group-hover:translate-y-0.5 transition-transform" />
                         </button>
+
+
 
                         {showUserMenu && (
                             <div className="absolute right-0 mt-2 w-48 bg-white border border-[#EDEBE9] shadow-xl z-50 rounded-lg py-1">

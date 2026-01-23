@@ -23,14 +23,24 @@ export const useTasks = (options?: UseTasksOptions) => {
         setLoading(true);
         let syncedCount = 0;
         try {
+            console.log('🔄 Starting task fetch and sync...');
+
             // 1. Trigger Sync
             const syncRes = await fetch('/api/sync', { method: 'POST' });
             const syncData = await syncRes.json();
             syncedCount = syncData.syncedCount || 0;
+            console.log('✅ Sync complete:', syncData);
 
             // 2. Fetch Tasks
-            const res = await fetch('/api/tasks');
+            const res = await fetch('/api/tasks', {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
             const data: Task[] = await res.json();
+            console.log(`📦 Fetched ${data.length} tasks from database`);
+            console.log('Tasks data:', data);
 
             // 3. Check for new tasks
             if (options?.onNewTasks) {
@@ -39,6 +49,7 @@ export const useTasks = (options?: UseTasksOptions) => {
                 if (newTasks.length > 0) {
                     // Only notify if it's not the very first fetch of the session
                     if (!isFirstFetchRef.current) {
+                        console.log(`🆕 Found ${newTasks.length} new tasks`);
                         options.onNewTasks(newTasks.length, newTasks);
                     }
                 }
@@ -51,7 +62,7 @@ export const useTasks = (options?: UseTasksOptions) => {
             setTasks(data);
             return syncedCount;
         } catch (error) {
-            console.error('Failed to fetch tasks:', error);
+            console.error('❌ Failed to fetch tasks:', error);
             return 0;
         } finally {
             setLoading(false);

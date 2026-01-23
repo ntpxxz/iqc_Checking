@@ -66,3 +66,13 @@ model Settings {
   samplingStandard   String  @default("ISO 2859-1")
   language           String  @default("English")
 }
+
+model User {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  email     String?
+  password  String?
+  role      String   @default("inspector")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

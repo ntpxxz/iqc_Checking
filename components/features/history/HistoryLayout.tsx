@@ -20,6 +20,9 @@ interface HistoryLayoutProps {
     setJudgmentPage: (page: number) => void;
     processedJudgmentResults: any[];
     requestJudgmentSort: (key: string) => void;
+    selectedHistory: string[];
+    onSelectAllHistory: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSelectItemHistory: (id: string) => void;
 }
 
 export function HistoryLayout({

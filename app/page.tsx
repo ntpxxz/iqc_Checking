@@ -14,6 +14,7 @@ import { SettingsView } from '@/components/features/settings/SettingsView';
 
 import { DetailModal } from '@/components/modals/DetailModal';
 import { RejectModal } from '@/components/modals/RejectModal';
+import { ExportModal } from '@/components/modals/ExportModal';
 import { ToastContainer } from '@/components/ui/Toast';
 
 import { useTasks } from '@/hooks/useTasks';
@@ -23,9 +24,11 @@ import { useToast } from '@/hooks/useToast';
 import { Task, InspectionRecord } from '@/types';
 
 export default function Page() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [view, setView] = useState('DASHBOARD');
   const { toasts, addToast } = useToast();
+
+  const user = session?.user as any;
 
   // Modals & Active State
   const [activeJob, setActiveJob] = useState<Task | null>(null);
@@ -96,7 +99,8 @@ export default function Page() {
   // Column Visibility
   const columnLabels: Record<string, string> = {
     urgent: 'Urgent', id: 'ID', receivedAt: 'Received', warehouse: 'Warehouse',
-    invoice: 'Invoice No', part: 'Part No', partName: 'Part Name', qty: 'Qty', iqcStatus: 'Status'
+    invoice: 'Invoice No', part: 'Part No', partName: 'Part Name', qty: 'Qty',
+    samplingType: 'Sampling Type', iqcStatus: 'Status'
   };
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
@@ -122,19 +126,40 @@ export default function Page() {
     setShowJudgmentDateMenu(false);
   };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Selection State
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [selectedHistory, setSelectedHistory] = useState<string[]>([]);
+
+  // --- ACTIONS ---
+  const handleSelectAllTasks = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedItems(processedTasks.map(t => t.id));
+      setSelectedTasks(processedTasks.map(t => t.id));
     } else {
-      setSelectedItems([]);
+      setSelectedTasks([]);
     }
   };
 
-  const handleSelectItem = (id: string) => {
-    if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter(item => item !== id));
+  const handleSelectItemTask = (id: string) => {
+    if (selectedTasks.includes(id)) {
+      setSelectedTasks(selectedTasks.filter(item => item !== id));
     } else {
-      setSelectedItems([...selectedItems, id]);
+      setSelectedTasks([...selectedTasks, id]);
+    }
+  };
+
+  const handleSelectAllHistory = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedHistory(processedJudgmentResults.map(t => t.id));
+    } else {
+      setSelectedHistory([]);
+    }
+  };
+
+  const handleSelectItemHistory = (id: string) => {
+    if (selectedHistory.includes(id)) {
+      setSelectedHistory(selectedHistory.filter(item => item !== id));
+    } else {
+      setSelectedHistory([...selectedHistory, id]);
     }
   };
 
@@ -177,6 +202,7 @@ export default function Page() {
     setView('RESULT');
 
     const inspectionData = {
+      taskId: activeJob.id, // Add taskId to help backend cleanup
       date: new Date().toLocaleDateString('en-GB'),
       time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
       lotIqc: activeJob.lotNo,
@@ -190,7 +216,7 @@ export default function Page() {
       judgment: finalV,
       actionLot: finalV === 'PASS' ? 'Release to WH' : 'Hold',
       remark: remark,
-      inspector: 'Jane Doe',
+      inspector: user?.name || 'Unknown',
       qty: activeJob.qty,
       status: finalV === 'PASS' ? 'PASSED' : 'REJECTED',
       samplingType: activeJob.samplingType
@@ -256,6 +282,7 @@ export default function Page() {
         <ToastContainer toasts={toasts} />
         <RejectModal isOpen={showRejectModal} onClose={() => setShowRejectModal(false)} onConfirm={confirmReject} />
         <DetailModal item={showDetailModal} onClose={() => setShowDetailModal(null)} />
+        <ExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} data={processedJudgmentResults} selectedIds={selectedHistory} />
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -270,7 +297,6 @@ export default function Page() {
               <DashboardView
                 processedTasks={processedTasks}
                 recentHistory={processedJudgmentResults}
-                selectedItems={selectedItems}
                 visibleColumns={visibleColumns}
                 toggleColumn={toggleColumn}
                 showColumnMenu={showColumnMenu}
@@ -289,8 +315,6 @@ export default function Page() {
                 queuePage={queuePage}
                 setQueuePage={setQueuePage}
                 itemsPerPage={itemsPerPage}
-                handleSelectAll={handleSelectAll}
-                handleSelectItem={handleSelectItem}
                 handleStartInspection={handleStartInspection}
                 requestSort={requestSort}
                 refreshTasks={handleManualSync}
@@ -331,6 +355,9 @@ export default function Page() {
                 setJudgmentPage={setJudgmentPage}
                 processedJudgmentResults={processedJudgmentResults}
                 requestJudgmentSort={requestJudgmentSort}
+                selectedHistory={selectedHistory}
+                onSelectAllHistory={handleSelectAllHistory}
+                onSelectItemHistory={handleSelectItemHistory}
               />
             )}
 
