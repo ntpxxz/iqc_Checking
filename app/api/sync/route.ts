@@ -5,7 +5,6 @@ import { warehouseDb } from '@/lib/warehouseDb';
 export async function POST() {
     try {
         // 1. Fetch pending invoices from Warehouse DB
-        // Assuming 'Pending' is the status for new items. Adjust if it's NULL or empty.
         const { rows: newInvoices } = await warehouseDb.query(
             `SELECT * FROM invoices WHERE iqcstatus = 'Pending' OR iqcstatus IS NULL ORDER BY id DESC`
         );
@@ -18,12 +17,12 @@ export async function POST() {
 
         for (const inv of newInvoices) {
             try {
-                // 2. Check if task already exists to avoid duplicates
-                // We can use invoice number + part number as a unique key
-                const existingTask = await prisma.task.findFirst({
+                // 2. Check if inbound task already exists
+                const existingTask = await prisma.inboundTask.findFirst({
                     where: {
-                        invoice: inv.invoice,
-                        part: inv.partNo
+                        invoiceNo: inv.invoice,
+                        partNo: inv.partNo,
+                        vendor: inv.vendor || 'Unknown'
                     }
                 });
 
@@ -46,31 +45,35 @@ export async function POST() {
                     continue;
                 }
 
-                // 4. Create new Task in IQC DB
-                const newTask = await prisma.task.create({
+                // 4. Create or Get Part
+                let part = await prisma.part.findUnique({
+                    where: { partNo: inv.partNo }
+                });
+
+                if (!part) {
+                    part = await prisma.part.create({
+                        data: {
+                            partNo: inv.partNo,
+                            name: inv.partName || 'Unknown',
+                            unit: 'PCS'
+                        }
+                    });
+                }
+
+                // 5. Create new InboundTask in IQC DB
+                const newTask = await prisma.inboundTask.create({
                     data: {
-                        receivedAt: inv.receivedDate || new Date().toISOString().split('T')[0],
-                        inspectionType: 'New Part', // Default
-                        invoice: inv.invoice,
-                        lotNo: `LOT-${inv.id}`, // Generate a lot number based on ID
-                        model: inv.model || '-', // Use model from invoice if available
-                        partName: inv.partName || 'Unknown',
-                        part: inv.partNo,
-                        rev: inv.rev || '-', // Use rev from invoice if available
+                        status: 'IQC_WAITING',
+                        invoiceNo: inv.invoice,
+                        poNo: inv.po,
                         vendor: inv.vendor || 'Unknown',
-                        qty: inv.qty || 0,
-                        receiver: inv.recordedBy || 'System',
-                        issue: '-',
-                        timestamp: inv.timestamp || new Date().toISOString(),
-                        iqcStatus: 'Waiting IQ',
-                        grn: inv.grn || '-', // Use GRN from invoice if available
-                        mfgDate: inv.mfgDate || '-',
-                        location: 'Receiving',
-                        warehouse: inv.warehouse || 'Main',
-                        samplingType: 'Normal',
-                        totalSampling: 0,
-                        aql: '0.65',
-                        urgent: false,
+                        partId: part.id,
+                        partNo: inv.partNo,
+                        partName: inv.partName,
+                        lotNo: `LOT-${inv.id}`,
+                        planQty: Number(inv.qty) || 0,
+                        receivedBy: inv.recordedBy || 'System',
+                        receivedAt: inv.receivedDate ? new Date(inv.receivedDate) : new Date(),
                     }
                 });
                 createdTasks.push(newTask);
@@ -84,25 +87,30 @@ export async function POST() {
             }
         }
 
-        // 5. Cleanup: Remove tasks from IQC DB that are no longer 'Pending' in Warehouse DB
-        // Fetch all local tasks
-        const localTasks = await prisma.task.findMany();
+        // 6. Cleanup: Remove tasks from IQC DB that are no longer 'Pending' in Warehouse DB
+        const localTasks = await prisma.inboundTask.findMany({
+            where: {
+                status: {
+                    in: ['PENDING', 'IQC_WAITING']
+                }
+            }
+        });
         let removedCount = 0;
 
         for (const task of localTasks) {
             // Check status in warehouse
             const { rows: whStatus } = await warehouseDb.query(
                 `SELECT iqcstatus FROM invoices WHERE invoice = $1 AND "partNo" = $2`,
-                [task.invoice, task.part]
+                [task.invoiceNo, task.partNo]
             );
 
             if (whStatus.length > 0) {
                 const status = whStatus[0].iqcstatus;
                 // If status is not Pending/NULL, it means it's already processed elsewhere
-                if (status && status !== 'Pending') {
-                    await prisma.task.delete({ where: { id: task.id } });
+                if (status && status !== 'Pending' && status !== 'Pending IQC') {
+                    await prisma.inboundTask.delete({ where: { id: task.id } });
                     removedCount++;
-                    console.log(`Task ${task.invoice} removed during cleanup (Warehouse status: ${status})`);
+                    console.log(`Task ${task.invoiceNo} removed during cleanup (Warehouse status: ${status})`);
                 }
             }
         }

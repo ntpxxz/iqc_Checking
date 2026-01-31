@@ -42,6 +42,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
             <table className="ms-table">
                 <thead>
                     <tr>
+                        <th className="w-10 text-center">No.</th>
                         {visibleColumns.urgent && <th onClick={() => onSort('urgent')} className="cursor-pointer hover:bg-[#F3F2F1]">Priority</th>}
                         {visibleColumns.invoice && <th onClick={() => onSort('invoice')} className="cursor-pointer hover:bg-[#F3F2F1]">Invoice No</th>}
                         {visibleColumns.part && <th onClick={() => onSort('part')} className="cursor-pointer hover:bg-[#F3F2F1]">Part Details</th>}
@@ -63,6 +64,9 @@ export const TaskTable: React.FC<TaskTableProps> = ({
                             transition={{ duration: 0.2, delay: index * 0.03 }}
                             className="group"
                         >
+                            <td className="text-center text-xs text-[#605E5C] font-medium w-10">
+                                {index + 1}
+                            </td>
                             {visibleColumns.urgent && (
                                 <td>
                                     {task.urgent ? (

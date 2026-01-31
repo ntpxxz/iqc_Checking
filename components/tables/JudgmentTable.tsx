@@ -40,13 +40,14 @@ export const JudgmentTable: React.FC<JudgmentTableProps> = ({
                             />
                         </th>
                         <th onClick={() => onSort('date')} className="cursor-pointer hover:bg-[#F3F2F1]">Date</th>
+                        <th onClick={() => onSort('invoice')} className="cursor-pointer hover:bg-[#F3F2F1]">Invoice No.</th>
                         <th onClick={() => onSort('lotIqc')} className="cursor-pointer hover:bg-[#F3F2F1]">Lot IQC</th>
                         <th onClick={() => onSort('partNo')} className="cursor-pointer hover:bg-[#F3F2F1]">Part Details</th>
                         <th onClick={() => onSort('supplier')} className="cursor-pointer hover:bg-[#F3F2F1]">Supplier</th>
                         <th onClick={() => onSort('qty')} className="cursor-pointer hover:bg-[#F3F2F1]">Qty</th>
                         <th onClick={() => onSort('judgment')} className="cursor-pointer hover:bg-[#F3F2F1]">Judgment</th>
                         <th onClick={() => onSort('actionLot')} className="cursor-pointer hover:bg-[#F3F2F1]">Action</th>
-                        <th className="text-right">Inspector</th>
+                        <th className="text-center">Inspector</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,11 +71,12 @@ export const JudgmentTable: React.FC<JudgmentTableProps> = ({
                                 />
                             </td>
                             <td onClick={() => onItemClick && onItemClick(item)} className="text-[#323130] font-medium">{item.date}</td>
+                            <td onClick={() => onItemClick && onItemClick(item)} className="text-[#323130] font-medium text-xs font-mono">{item.invoice}</td>
                             <td onClick={() => onItemClick && onItemClick(item)} className="font-mono text-xs font-bold text-[#605E5C]">{item.lotIqc}</td>
                             <td onClick={() => onItemClick && onItemClick(item)}>
                                 <div className="flex flex-col">
                                     <span className="font-bold text-[#323130]">{item.partNo}</span>
-                                    <span className="text-[10px] text-[#605E5C] font-bold uppercase tracking-wider">{item.invoiceNo}</span>
+                                    <span className="text-[10px] text-[#605E5C] font-bold uppercase tracking-wider">{item.partName}</span>
                                 </div>
                             </td>
                             <td onClick={() => onItemClick && onItemClick(item)} className="text-[#323130] font-medium">{item.supplier}</td>
@@ -86,8 +88,8 @@ export const JudgmentTable: React.FC<JudgmentTableProps> = ({
                                 </span>
                             </td>
                             <td onClick={() => onItemClick && onItemClick(item)} className="text-[10px] font-bold text-[#605E5C] uppercase tracking-widest">{item.actionLot}</td>
-                            <td onClick={() => onItemClick && onItemClick(item)} className="text-right">
-                                <div className="flex items-center justify-end gap-2">
+                            <td onClick={() => onItemClick && onItemClick(item)} className="text-center">
+                                <div className="flex items-center justify-center gap-2">
                                     <span className="text-sm font-medium text-[#323130]">{item.inspector}</span>
                                     <div className="w-7 h-7 bg-[#F3F2F1] rounded-lg flex items-center justify-center text-[10px] font-bold text-[#605E5C] border border-[#EDEBE9]">
                                         {item.inspector.split(' ').map((n: string) => n[0]).join('')}
@@ -98,6 +100,6 @@ export const JudgmentTable: React.FC<JudgmentTableProps> = ({
                     ))}
                 </tbody>
             </table>
-        </div>
+        </div >
     );
 };

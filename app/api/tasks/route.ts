@@ -3,39 +3,80 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
     try {
-        const tasks = await prisma.task.findMany({
-            orderBy: { createdAt: 'desc' }
+        // Fetch inbound tasks for IQC inspection dashboard
+        const tasks = await prisma.inboundTask.findMany({
+            where: {
+                status: {
+                    in: ['PENDING', 'IQC_WAITING', 'IQC_IN_PROGRESS']
+                }
+            },
+            include: {
+                part: true
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 500
         });
-        return NextResponse.json(tasks);
-    } catch (error) {
-        console.error('Failed to fetch tasks:', error);
 
-        // Return an empty array so frontend .filter() and .map() don't break
-        // We use statusText to pass the specific error message to the console
+        // Map to frontend expected format
+        const mappedTasks = tasks.map((task) => ({
+            id: task.id,
+            invoice: task.invoiceNo,
+            part: task.partNo,
+            partName: task.partName || task.part?.name || 'Unknown Part',
+            vendor: task.vendor,
+            qty: task.planQty,
+            iqcStatus: task.status,
+            receiver: task.receivedBy || 'System',
+            samplingType: 'Normal',
+            aql: '0.65',
+            tagNo: task.tagNo,
+            poNo: task.poNo,
+            lotNo: task.lotNo,
+            createdAt: task.createdAt,
+            receivedAt: task.receivedAt,
+        }));
+
+        return NextResponse.json(mappedTasks);
+    } catch (error) {
+        console.error('Failed to fetch inbound tasks:', error);
         return NextResponse.json([], {
             status: 500,
             statusText: 'Database Connection Error'
         });
     }
 }
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
 
         // Validate required fields
-        if (!body.invoice || !body.part) {
+        if (!body.invoiceNo || !body.partNo || !body.vendor) {
             return NextResponse.json(
-                { error: 'Missing required fields: invoice and part are required' },
+                { error: 'Missing required fields: invoiceNo, partNo, and vendor are required' },
                 { status: 400 }
             );
         }
 
-        const task = await prisma.task.create({
-            data: body
+        const task = await prisma.inboundTask.create({
+            data: {
+                invoiceNo: body.invoiceNo,
+                poNo: body.poNo,
+                vendor: body.vendor,
+                partNo: body.partNo,
+                partName: body.partName,
+                planQty: Number(body.planQty || 0),
+                status: body.status || 'PENDING',
+                lotNo: body.lotNo,
+                rev: body.rev,
+                receivedBy: body.receivedBy,
+                receivedAt: body.receivedAt ? new Date(body.receivedAt) : undefined,
+            }
         });
+
         return NextResponse.json(task, { status: 201 });
     } catch (error) {
-        console.error('Failed to create task:', error);
+        console.error('Failed to create inbound task:', error);
         return NextResponse.json(
             { error: 'Failed to create task', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
@@ -55,7 +96,7 @@ export async function DELETE(request: Request) {
             );
         }
 
-        await prisma.task.delete({
+        await prisma.inboundTask.delete({
             where: { id }
         });
 

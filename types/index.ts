@@ -1,38 +1,66 @@
-export interface Task {
+export interface InboundTask {
     id: string;
-    receivedAt: string;
-    inspectionType: string;
-    invoice: string;
-    lotNo: string;
-    model: string;
-    partName: string;
-    part: string;
-    rev: string;
+    status: 'PENDING' | 'IQC_WAITING' | 'IQC_IN_PROGRESS' | 'IQC_PASSED_WAITING_STOCK' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
+
+    // Tagging
+    tagNo?: string;
+
+    // Invoice/PO Document
+    invoiceNo: string;
+    poNo?: string;
     vendor: string;
-    qty: number;
-    receiver: string;
-    issue: string;
-    timestamp: string;
-    iqcStatus: string;
-    grn: string;
-    mfgDate: string;
-    location: string;
-    warehouse: string;
-    samplingType: string;
-    totalSampling: number;
-    aql: string;
-    urgent: boolean;
+
+    // Part Info
+    partId?: string;
+    partNo: string;
+    partName?: string;
+
+    // Traceability
+    lotNo?: string;
+    rev?: string;
+    mfgDate?: string | Date;
+
+    // Quantity
+    planQty: number;
+    actualQty: number;
+
+    // IQC Inspection Flow
+    receivedBy?: string;
+    receivedAt?: string | Date;
+    receiverNote?: string;
+    assignedTo?: string;
+    startedAt?: string | Date;
+    finishedAt?: string | Date;
+
+    // Warehouse Integration
+    targetLocation?: string;
+
+    // Meta
+    dueDate?: string | Date;
+    isUrgent: boolean;
+    createdAt: string | Date;
+    updatedAt: string | Date;
+
+    // Legacy compatibility fields
+    invoice?: string;     // Maps to invoiceNo
+    part?: string;        // Maps to partNo
+    qty?: number;         // Maps to planQty
+    iqcStatus?: string;   // Maps to status
+    receiver?: string;    // Maps to receivedBy
+    samplingType?: string;
+    totalSampling?: number;
+    aql?: string;
+
     requirements?: {
         sampleSize: number;
         majorLimit: number;
         minorLimit: number;
         code: string;
     };
-    sampleSize?: number;
-    majorLimit?: number;
-    minorLimit?: number;
-    code?: string;
 }
+
+// Keep for backward compatibility
+export type Task = InboundTask;
 
 export interface Toast {
     id: number;
@@ -48,7 +76,7 @@ export interface InspectionRecord {
     partName: string;
     supplier: string;
     shipLot: string;
-    invoiceNo: string;
+    invoice: string;
     rev: string;
     country: string;
     judgment: string;

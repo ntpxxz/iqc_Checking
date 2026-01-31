@@ -5,9 +5,35 @@ import { warehouseDb } from '@/lib/warehouseDb';
 export async function GET() {
     try {
         const inspections = await prisma.inspectionResult.findMany({
+            include: {
+                inboundTask: {
+                    include: {
+                        part: true
+                    }
+                }
+            },
             orderBy: { createdAt: 'desc' }
         });
-        return NextResponse.json(inspections);
+
+        // Map to legacy InspectionRecord format for frontend
+        const mappedInspections = inspections.map((ins) => ({
+            id: ins.id,
+            date: ins.createdAt.toLocaleDateString('en-GB'),
+            time: ins.createdAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+            lotIqc: ins.inboundTask?.lotNo || 'N/A',
+            invoice: ins.inboundTask?.invoiceNo || 'N/A',
+            partNo: ins.inboundTask?.partNo || 'N/A',
+            partName: ins.inboundTask?.partName || ins.inboundTask?.part?.name || 'N/A',
+            supplier: ins.inboundTask?.vendor || 'N/A',
+            judgment: ins.judgment,
+            status: ins.judgment === 'PASS' ? 'PASSED' : 'REJECTED',
+            qty: (ins.passedQty || 0) + (ins.failedQty || 0),
+            remark: ins.remark || '',
+            inspector: ins.inspector || 'System',
+            createdAt: ins.createdAt.toISOString()
+        }));
+
+        return NextResponse.json(mappedInspections);
     } catch (error) {
         console.error('Failed to fetch inspections:', error);
         return NextResponse.json(
@@ -23,33 +49,44 @@ export async function POST(request: Request) {
         const { taskId, ...inspectionData } = body;
 
         // Validate required fields
-        if (!body.lotIqc || !body.partNo || !body.judgment) {
+        if (!body.partNo || !body.judgment) {
             return NextResponse.json(
-                { error: 'Missing required fields: lotIqc, partNo, and judgment are required' },
+                { error: 'Missing required fields: partNo and judgment are required' },
                 { status: 400 }
             );
         }
 
         // 1. Save to IQC DB (InspectionResult)
         const inspection = await prisma.inspectionResult.create({
-            data: inspectionData
+            data: {
+                inboundTaskId: taskId,
+                passedQty: body.judgment === 'PASS' ? Number(body.qty || 0) : 0,
+                failedQty: body.judgment === 'FAIL' ? Number(body.qty || 0) : 0,
+                judgment: body.judgment,
+                remark: body.remark || '',
+                inspector: body.inspector || 'System',
+                defectReason: body.judgment === 'FAIL' ? body.defectReason || body.remark : null
+            }
         });
 
-        // 2. Delete from Pending Tasks
+        // 2. Update InboundTask Status
         if (taskId) {
             try {
-                await prisma.task.delete({
-                    where: { id: taskId }
+                await prisma.inboundTask.update({
+                    where: { id: taskId },
+                    data: {
+                        status: body.judgment === 'PASS' ? 'COMPLETED' : 'REJECTED',
+                        finishedAt: new Date(),
+                        actualQty: Number(body.qty || 0)
+                    }
                 });
-                console.log(`Task ${taskId} removed from pending queue`);
-            } catch (deleteError) {
-                console.warn(`Could not delete task ${taskId}:`, deleteError);
-                // Continue anyway, we don't want to fail the whole request
+                console.log(`InboundTask ${taskId} marked as ${body.judgment === 'PASS' ? 'COMPLETED' : 'REJECTED'}`);
+            } catch (updateError) {
+                console.warn(`Could not update task ${taskId} status:`, updateError);
             }
         }
 
         // 3. Update Warehouse DB
-        // Map IQC judgment to Warehouse status
         const warehouseStatus = body.judgment === 'PASS' ? 'PASSED' : 'REJECTED';
 
         let warehouseId = null;

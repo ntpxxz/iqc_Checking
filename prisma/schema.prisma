@@ -1,3 +1,5 @@
+// schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,19 +9,63 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- 1. User & Authentication ---
+// ==========================================
+// 1. Enums
+// ==========================================
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  USER
+}
+
+enum Department {
+  IQC
+  WAREHOUSE
+  PRODUCTION
+  PLANNING
+  PURCHASING
+}
+
+// Simplified for Inbound-only system
+enum InboundStatus {
+  PENDING                  // 1. รอรับของ
+  IQC_WAITING              // 2. รับของแล้ว รอ IQC ตรวจ
+  IQC_IN_PROGRESS          // 3. กำลังตรวจสอบ
+  IQC_PASSED_WAITING_STOCK // 4. ตรวจผ่าน รอ Warehouse เก็บเข้า Stock
+  COMPLETED                // 5. เสร็จสมบูรณ์ เก็บเข้า Stock แล้ว
+  REJECTED                 // x. ตรวจไม่ผ่าน
+  CANCELLED                // x. ยกเลิก
+}
+
+// Reserved for future outbound/picking features
+enum OutboundStatus {
+  PENDING
+  PICKING_IN_PROGRESS
+  PICKED_WAITING_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+// ==========================================
+// 2. User & System
+// ==========================================
 
 model User {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  email     String?   @unique
-  password  String?
-  role      String    @default("user")   // ปรับเป็น user ตามความต้องการ
-  section   String    @default("IQC")    // เพิ่มเพื่อแบ่งส่วนการทำงาน (IQC, MC)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
+  id        String     @id @default(uuid())
+  username  String     @unique
+  password  String
+  email     String?
+  role      Role       @default(USER)
+  section   Department @default(IQC)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
+  sessions      Session[]
+  assignedInboundTasks InboundTask[] @relation("AssignedUser")
+  notifications Notification[]
+  
   @@map("users")
 }
 
@@ -28,230 +74,270 @@ model Session {
   userId    String
   token     String   @unique
   expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@map("sessions")
 }
 
-// --- 2. IQC System (iqcsamp) ---
-
-model Task {
-  id              String   @id @default(uuid())
-  receivedAt      String
-  inspectionType  String
-  invoice         String
-  lotNo           String
-  model           String
-  partName        String
-  part            String
-  partNo          String   // ใช้ partNo แทน sku ตามที่กำหนด
-  rev             String
-  vendor          String
-  qty             Int
-  receiver        String
-  issue           String
-  timestamp       String
-  iqcStatus       String   @default("Pending")
-  grn             String
-  mfgDate         String
-  location        String
-  samplingType    String
-  totalSampling   Int
-  aql             String
-  urgent          Boolean
-  requirements    Json?
-  warehouse       String   @default("iqcsamp") // ระบุส่วนงาน iqcsamp
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("tasks")
-}
-
-model InspectionResult {
-  id           String   @id @default(uuid())
-  date         String
-  lotIqc       String
-  partNo       String   // เชื่อมโยงด้วย partNo
-  supplier     String
-  shipLot      String
-  invoiceNo    String
-  rev          String
-  country      String
-  judgment     String
-  actionLot    String
-  remark       String
-  time         String
-  inspector    String
-  qty          Int
-  status       String
-  partName     String
-  samplingType String   @default("Normal")
-  createdAt    DateTime @default(now())
-
-  @@map("inspection_results")
-}
-
-// --- 3. MC System (oneinv & mobileapp) ---
-
-model Part {
-  id             String     @id
-  name           String
-  qty            Int
-  unit           String
-  status         String
-  icon           String
-  partNo         String     @unique // เปลี่ยนกลับจาก sku เป็น partNo
-  location       String
-  locationStatus String     @default("Available")
-  system         String     @default("oneinv") // แยกส่วนสำหรับ oneinv หรือ mobileapp
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  movements      Movement[]
-
-  @@map("parts")
-}
-
-model Movement {
-  id          String   @id
-  date        DateTime @default(now())
-  qty         Int
-  source      String
-  destination String
-  type        String
-  partId      String
-  system      String   @default("oneinv") // ระบุที่มาของรายการเคลื่อนไหว
-  createdAt   DateTime @default(now())
-  part        Part     @relation(fields: [partId], references: [id])
-
-  @@map("movements")
-}
-
-model ProductionOrder {
-  id          String    @id
-  status      String
-  line        String
-  description String
-  dueTime     String
-  progress    Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  bomItems    BOMItem[]
-
-  @@map("production_orders")
-}
-
-model BOMItem {
-  id              String          @id
-  name            String
-  requiredQty     Int
-  picked          Boolean         @default(false)
-  unit            String
-  moId            String
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  productionOrder ProductionOrder @relation(fields: [moId], references: [id])
-
-  @@map("bom_items")
-}
-
-// --- 4. Inbound & Logistics ---
-
-model InboundInvoice {
-  id           String        @id
-  vendor       String?
-  po           String?
-  status       String        @default("pending")
-  trackingNo   String?
-  invoiceDate  String?
-  receivedDate String?
-  recordedBy   String?
-  partNo       String?       // ใช้ partNo
-  partName     String?
-  qty          Int?
-  invoice      String?
-  iqcstatus    String?       @default("Pending")
-  system       String        @default("oneinv")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @default(now()) @updatedAt
-  items        InboundItem[] @relation("InvoiceToItems")
-
-  @@map("inbound_invoices")
-}
-
-model InboundItem {
-  id             String         @id @default(cuid())
-  name           String
-  partNo         String         // ใช้ partNo แทน sku
-  qty            Int
-  unit           String         @default("pcs")
-  receivedQty    Int            @default(0)
-  invoiceId      String
-  iqcStatus      String         @default("pending")
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @default(now()) @updatedAt
-  inboundInvoice InboundInvoice @relation("InvoiceToItems", fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@map("inbound_items")
-}
-
-model InboundTask {
-  id           Int      @id @default(autoincrement())
-  po           String
-  vendor       String?
-  partNo       String
-  partName     String
-  qty          Int
-  invoice      String?
-  status       String   @default("Pending")
-  system       String   @default("oneinv")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-
-  @@map("inbound_tasks")
-}
-
-// --- 5. Support & Notifications ---
-
 model Notification {
   id        String   @id @default(cuid())
-  type      String   // ระบุประเภทเพื่อแยกแสดงผลใน mobileapp
-  title     String?
+  userId    String?
+  type      String   // INFO, WARNING, ERROR
+  title     String
   message   String?
   data      Json?
-  read      Boolean  @default(false)
-  system    String   @default("mobileapp") // สำหรับแจ้งเตือนใน mobileapp
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-
+  user      User?    @relation(fields: [userId], references: [id])
   @@map("notifications")
 }
 
+// ==========================================
+// 3. Master Data
+// ==========================================
+
 model Supplier {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
   contactName String?
   email       String?
   phone       String?
   address     String?
-  country     String?
+  taxId       String?
+  
+  parts       Part[]   @relation("PartSupplier")
+  poList      PurchaseOrder[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   @@map("suppliers")
 }
 
-model purchaseOrder {
-  id        Int      @id @default(autoincrement())
-  po        String   @unique
-  partNo    String
-  partName  String
-  qty       Int
-  timestamp String
-  createdAt DateTime @default(now())
+model Part {
+  id          String   @id @default(uuid())
+  partNo      String   @unique
+  name        String?
+  spec        String?
+  drawingNo   String?
+  unit        String   @default("PCS")
+  safetyStock Float    @default(0)
+  icon        String?
+  
+  suppliers      Supplier[] @relation("PartSupplier")
+  stocks         Stock[]
+  inboundTasks   InboundTask[]
+  outboundTasks  OutboundTask[]
+  poItems        PurchaseOrderItem[]
+  bomItems       BOMItem[]
+  movements      Movement[]
 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([partNo])
+  @@map("master_parts")
+}
+
+// ==========================================
+// 4. Inventory
+// ==========================================
+
+model Stock {
+  id        String   @id @default(uuid())
+  partId    String
+  location  String
+  quantity  Float    @default(0)
+  updatedAt DateTime @updatedAt
+  part      Part     @relation(fields: [partId], references: [id])
+  @@unique([partId, location])
+  @@map("inventory_stocks")
+}
+
+model Movement {
+  id          String   @id @default(uuid())
+  partId      String
+  type        String
+  qty         Float
+  docRef      String?
+  createdAt   DateTime @default(now())
+  part        Part     @relation(fields: [partId], references: [id])
+  @@map("inventory_movements")
+}
+
+// ==========================================
+// 5. Inbound Task (IQC Inspection)
+// ==========================================
+
+model InboundTask {
+  id          String        @id @default(uuid())
+  status      InboundStatus @default(PENDING)
+  
+  // --- Tagging ---
+  tagNo       String?       @unique  // IQC Tag Number (printed on label)
+  
+  // --- Invoice/PO Document ---
+  invoiceNo   String                  // INV_NO from INVINCOM
+  poNo        String?                 // PO_NO from INVINCOM
+  vendor      String                  // VENDOR_NAME from INVINCOM
+  
+  // --- Part Info ---
+  partId      String?
+  part        Part?         @relation(fields: [partId], references: [id])
+  partNo      String                  // ITEM_NO (snapshot, ไม่ต้องพึ่ง Part table)
+  partName    String?                 // ITEM_NAME
+  
+  // --- Traceability ---
+  lotNo       String?
+  rev         String?
+  mfgDate     DateTime?
+  
+  // --- Quantity ---
+  planQty     Float                   // REPLY_QTY from invoice
+  actualQty   Float         @default(0)  // Actual quantity after inspection
+  
+  // --- IQC Inspection Flow ---
+  receivedBy    String?               // Who received at warehouse
+  receivedAt    DateTime?             // When received at warehouse
+  receiverNote  String?
+  
+  assignedTo    String?               // IQC inspector assigned
+  assignee      User?       @relation("AssignedUser", fields: [assignedTo], references: [id])
+  startedAt     DateTime?             // When IQC started inspection
+  finishedAt    DateTime?             // When IQC finished
+  
+  // --- Warehouse Integration ---
+  targetLocation String?              // Where to store after passing IQC
+  
+  // --- Meta ---
+  dueDate       DateTime?
+  isUrgent      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // --- Relations ---
+  inspection    InspectionResult?
+  poItemId      String?
+  poItem        PurchaseOrderItem? @relation(fields: [poItemId], references: [id])
+  
+  @@unique([invoiceNo, partNo, vendor])
+  @@index([tagNo])
+  @@index([invoiceNo])
+  @@index([status])
+  @@index([vendor])
+  @@map("inbound_tasks")
+}
+
+// Reserved for future outbound/picking system
+model OutboundTask {
+  id          String         @id @default(uuid())
+  status      OutboundStatus @default(PENDING)
+  moNo        String                   // Manufacturing Order Number
+  line        String?                  // Production Line
+  
+  partId      String?
+  part        Part?          @relation(fields: [partId], references: [id])
+  partNo      String
+  
+  bomItemId   String?
+  bomItem     BOMItem?       @relation(fields: [bomItemId], references: [id])
+  
+  planQty     Float
+  pickedQty   Float          @default(0)
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  @@map("outbound_tasks")
+}
+
+// ==========================================
+// 6. Documents (PO & MO)
+// ==========================================
+
+model PurchaseOrder {
+  id          String   @id // PO_NO
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  
+  orderDate   DateTime?
+  dueDate     DateTime?
+  orderType   String?
+  currency    String?
+  vatRate     Float?
+  status      String   @default("OPEN")
+  
+  items       PurchaseOrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   @@map("purchase_orders")
 }
 
+model PurchaseOrderItem {
+  id          String   @id @default(cuid())
+  poId        String
+  partId      String
+  
+  orderQty    Float
+  receivedQty Float  @default(0)
+  unitPrice   Float?
+  totalAmount Float?
+  
+  po           PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  part         Part     @relation(fields: [partId], references: [id])
+  inboundTasks InboundTask[]
+  @@map("purchase_order_items")
+}
+
+model ProductionOrder {
+  id          String   @id // MONO
+  parentItem  String
+  parentName  String?
+  model       String?
+  planQty     Float
+  status      String   @default("OPEN")
+  
+  line        String?
+  workCenter  String?
+  
+  startDate   DateTime?
+  endDate     DateTime?
+  
+  bomItems    BOMItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("production_orders")
+}
+
+model BOMItem {
+  id                String          @id @default(cuid())
+  productionOrderId String
+  partId            String
+  part              Part            @relation(fields: [partId], references: [id])
+  
+  requiredQty       Float
+  pickedQty         Float           @default(0)
+  
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  outboundTasks     OutboundTask[]  // Reserved for future picking system
+  @@map("bom_items")
+}
+
+// ==========================================
+// 7. QC
+// ==========================================
+
+model InspectionResult {
+  id            String       @id @default(uuid())
+  inboundTaskId String       @unique
+  inboundTask   InboundTask  @relation(fields: [inboundTaskId], references: [id])
+  passedQty     Float
+  failedQty     Float
+  judgment      String
+  defectReason  String?
+  remark        String?
+  inspector     String?
+  createdAt     DateTime     @default(now())
+  @@map("inspection_results")
+}
 model invoice {
   id           Int      @id @default(autoincrement())
   po           String
@@ -262,10 +348,10 @@ model invoice {
   invoiceDate  String?
   receivedDate String?
   qty          Int
+  timestamp    String
+  createdAt    DateTime @default(now())
   recordedBy   String?
   iqcstatus    String   @default("Pending")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now())
 
   @@map("invoices")
 }
