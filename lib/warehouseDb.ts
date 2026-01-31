@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-    connectionString: process.env.WAREHOUSE_DB_URL,
+    connectionString: process.env.DATABASE_URL,
 });
 
 export const warehouseDb = {

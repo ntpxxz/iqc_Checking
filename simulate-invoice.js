@@ -3,7 +3,7 @@ require('dotenv').config();
 
 async function simulateInvoice() {
     const pool = new Pool({
-        connectionString: process.env.WAREHOUSE_DB_URL,
+        connectionString: process.env.DATABASE_URL,
     });
 
     const testInvoice = {

@@ -60,7 +60,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 opacity-80">Lot Number</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5 opacity-80">Lot IQC</p>
                                 <p className="font-mono font-semibold text-sm">{lotNo}</p>
                             </div>
                         </div>

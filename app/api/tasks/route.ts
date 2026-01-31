@@ -9,13 +9,15 @@ export async function GET() {
         return NextResponse.json(tasks);
     } catch (error) {
         console.error('Failed to fetch tasks:', error);
-        return NextResponse.json(
-            { error: 'Failed to fetch tasks', details: error instanceof Error ? error.message : 'Unknown error' },
-            { status: 500 }
-        );
+
+        // Return an empty array so frontend .filter() and .map() don't break
+        // We use statusText to pass the specific error message to the console
+        return NextResponse.json([], {
+            status: 500,
+            statusText: 'Database Connection Error'
+        });
     }
 }
-
 export async function POST(request: Request) {
     try {
         const body = await request.json();

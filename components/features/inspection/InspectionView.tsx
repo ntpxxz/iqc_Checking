@@ -60,7 +60,7 @@ export function InspectionView({
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider">Lot Number</p>
+                                <p className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider">Lot IQC</p>
                                 <p className="font-mono text-sm font-bold text-[#323130]">{activeJob.lotNo}</p>
                             </div>
                         </div>

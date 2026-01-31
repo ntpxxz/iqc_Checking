@@ -40,7 +40,7 @@ export function ResultView({
 
                 <div className="w-full grid grid-cols-2 gap-8 text-left border-t border-[#EDEBE9] pt-10 mb-10">
                     <div>
-                        <span className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1">Lot Number</span>
+                        <span className="text-[10px] font-bold text-[#605E5C] uppercase tracking-wider block mb-1">Lot IQC</span>
                         <span className="font-mono text-sm font-bold text-[#323130]">{activeJob?.lotNo}</span>
                     </div>
                     <div>

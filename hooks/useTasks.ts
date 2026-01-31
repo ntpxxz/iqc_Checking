@@ -39,6 +39,11 @@ export const useTasks = (options?: UseTasksOptions) => {
                 }
             });
             const data: Task[] = await res.json();
+            if (Array.isArray(data)) {
+                setTasks(data);
+            } else {
+                setTasks([]); // Fallback to empty list if API returned an error object
+            }
             console.log(`📦 Fetched ${data.length} tasks from database`);
             console.log('Tasks data:', data);
 

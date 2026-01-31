@@ -7,72 +7,265 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- 1. User & Authentication ---
+
+model User {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  email     String?   @unique
+  password  String?
+  role      String    @default("user")   // ปรับเป็น user ตามความต้องการ
+  section   String    @default("IQC")    // เพิ่มเพื่อแบ่งส่วนการทำงาน (IQC, MC)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+// --- 2. IQC System (iqcsamp) ---
+
 model Task {
-  id             String   @id @default(uuid())
-  receivedAt     String
-  inspectionType String
-  invoice        String
-  lotNo          String
-  model          String
-  partName       String
-  part           String
-  rev            String
-  vendor         String
-  qty            Int
-  receiver       String
-  issue          String
-  timestamp      String
-  iqcStatus      String
-  grn            String
-  mfgDate        String
-  location       String
-  samplingType   String
-  totalSampling  Int
-  aql            String
-  urgent         Boolean
-  requirements   Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  warehouse      String   @default("Main")
+  id              String   @id @default(uuid())
+  receivedAt      String
+  inspectionType  String
+  invoice         String
+  lotNo           String
+  model           String
+  partName        String
+  part            String
+  partNo          String   // ใช้ partNo แทน sku ตามที่กำหนด
+  rev             String
+  vendor          String
+  qty             Int
+  receiver        String
+  issue           String
+  timestamp       String
+  iqcStatus       String   @default("Pending")
+  grn             String
+  mfgDate         String
+  location        String
+  samplingType    String
+  totalSampling   Int
+  aql             String
+  urgent          Boolean
+  requirements    Json?
+  warehouse       String   @default("iqcsamp") // ระบุส่วนงาน iqcsamp
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("tasks")
 }
 
 model InspectionResult {
-  id        String   @id @default(uuid())
-  date      String
-  lotIqc    String
-  partNo    String
-  supplier  String
-  shipLot   String
-  invoiceNo String
-  rev       String
-  country   String
-  judgment  String
-  actionLot String
-  remark    String
-  time      String
-  inspector String
-  qty       Int
-  status    String
-  partName      String
-  samplingType  String   @default("Normal")
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  date         String
+  lotIqc       String
+  partNo       String   // เชื่อมโยงด้วย partNo
+  supplier     String
+  shipLot      String
+  invoiceNo    String
+  rev          String
+  country      String
+  judgment     String
+  actionLot    String
+  remark       String
+  time         String
+  inspector    String
+  qty          Int
+  status       String
+  partName     String
+  samplingType String   @default("Normal")
+  createdAt    DateTime @default(now())
+
+  @@map("inspection_results")
 }
 
-model Settings {
-  id                 String  @id @default(uuid())
-  emailNotifications Boolean @default(true)
-  autoPrintLabel     Boolean @default(false)
-  defaultAql         String  @default("0.65")
-  samplingStandard   String  @default("ISO 2859-1")
-  language           String  @default("English")
+// --- 3. MC System (oneinv & mobileapp) ---
+
+model Part {
+  id             String     @id
+  name           String
+  qty            Int
+  unit           String
+  status         String
+  icon           String
+  partNo         String     @unique // เปลี่ยนกลับจาก sku เป็น partNo
+  location       String
+  locationStatus String     @default("Available")
+  system         String     @default("oneinv") // แยกส่วนสำหรับ oneinv หรือ mobileapp
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  movements      Movement[]
+
+  @@map("parts")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  email     String?
-  password  String?
-  role      String   @default("inspector")
+model Movement {
+  id          String   @id
+  date        DateTime @default(now())
+  qty         Int
+  source      String
+  destination String
+  type        String
+  partId      String
+  system      String   @default("oneinv") // ระบุที่มาของรายการเคลื่อนไหว
+  createdAt   DateTime @default(now())
+  part        Part     @relation(fields: [partId], references: [id])
+
+  @@map("movements")
+}
+
+model ProductionOrder {
+  id          String    @id
+  status      String
+  line        String
+  description String
+  dueTime     String
+  progress    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bomItems    BOMItem[]
+
+  @@map("production_orders")
+}
+
+model BOMItem {
+  id              String          @id
+  name            String
+  requiredQty     Int
+  picked          Boolean         @default(false)
+  unit            String
+  moId            String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  productionOrder ProductionOrder @relation(fields: [moId], references: [id])
+
+  @@map("bom_items")
+}
+
+// --- 4. Inbound & Logistics ---
+
+model InboundInvoice {
+  id           String        @id
+  vendor       String?
+  po           String?
+  status       String        @default("pending")
+  trackingNo   String?
+  invoiceDate  String?
+  receivedDate String?
+  recordedBy   String?
+  partNo       String?       // ใช้ partNo
+  partName     String?
+  qty          Int?
+  invoice      String?
+  iqcstatus    String?       @default("Pending")
+  system       String        @default("oneinv")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @default(now()) @updatedAt
+  items        InboundItem[] @relation("InvoiceToItems")
+
+  @@map("inbound_invoices")
+}
+
+model InboundItem {
+  id             String         @id @default(cuid())
+  name           String
+  partNo         String         // ใช้ partNo แทน sku
+  qty            Int
+  unit           String         @default("pcs")
+  receivedQty    Int            @default(0)
+  invoiceId      String
+  iqcStatus      String         @default("pending")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+  inboundInvoice InboundInvoice @relation("InvoiceToItems", fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("inbound_items")
+}
+
+model InboundTask {
+  id           Int      @id @default(autoincrement())
+  po           String
+  vendor       String?
+  partNo       String
+  partName     String
+  qty          Int
+  invoice      String?
+  status       String   @default("Pending")
+  system       String   @default("oneinv")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@map("inbound_tasks")
+}
+
+// --- 5. Support & Notifications ---
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // ระบุประเภทเพื่อแยกแสดงผลใน mobileapp
+  title     String?
+  message   String?
+  data      Json?
+  read      Boolean  @default(false)
+  system    String   @default("mobileapp") // สำหรับแจ้งเตือนใน mobileapp
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model Supplier {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  country     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("suppliers")
+}
+
+model purchaseOrder {
+  id        Int      @id @default(autoincrement())
+  po        String   @unique
+  partNo    String
+  partName  String
+  qty       Int
+  timestamp String
+  createdAt DateTime @default(now())
+
+  @@map("purchase_orders")
+}
+
+model invoice {
+  id           Int      @id @default(autoincrement())
+  po           String
+  vendor       String?
+  partNo       String
+  partName     String
+  invoice      String
+  invoiceDate  String?
+  receivedDate String?
+  qty          Int
+  recordedBy   String?
+  iqcstatus    String   @default("Pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  @@map("invoices")
 }

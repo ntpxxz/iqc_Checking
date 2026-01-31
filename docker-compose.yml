@@ -6,17 +6,25 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: iqcsamp
+    env_file:
+      - .env
     restart: always
     ports:
-      - "3000:3000"
+      - "3060:3000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@pg-main:5432/iqc_db?schema=public
-      - WAREHOUSE_DB_URL=postgresql://postgres:postgres@pg-main:5432/warehouse_db?schema=public
+      - DATABASE_URL=postgresql://rootpg:123456@host.docker.internal:5432/warehouse?schema=public&sslmode=disable
       - NEXTAUTH_SECRET=supersecret
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3060
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      - app-network
+      - app-net
 
 networks:
-  app-network:
-    external: true
+  app-net:
+    driver: bridge
+volumes:
+  postgres_data:
+  postgres_data_dev:
+
+
