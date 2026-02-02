@@ -2,39 +2,11 @@ import { PrismaClient, InboundStatus, OutboundStatus, Role, Department } from '@
 import fs from 'fs'
 import csv from 'csv-parser'
 import path from 'path'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
-// --------------------------------------------------------
-// 📁 กำหนดชื่อไฟล์ CSV
-// --------------------------------------------------------
-const FILE_INVINCOM = 'INVINCOM.csv'
-const FILE_MOALLOC = 'MOALLOC.csv'
-
-// Helper: ฟังก์ชันสร้าง Tag ID (เช่น IN-20260131-00001)
-function generateTagID(prefix: string, index: number): string {
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-    const runNo = String(index + 1).padStart(5, '0')
-    return `${prefix}-${dateStr}-${runNo}`
-}
-
-// Helper: อ่าน CSV
-async function readCSV(filePath: string): Promise<any[]> {
-    const results: any[] = []
-    return new Promise((resolve, reject) => {
-        if (!fs.existsSync(filePath)) {
-            console.warn(`⚠️  File not found: ${filePath} (Skipping import...)`)
-            resolve([])
-            return
-        }
-
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on('data', (data) => results.push(data))
-            .on('end', () => resolve(results))
-            .on('error', (err) => reject(err))
-    })
-}
+// ... (existing code)
 
 async function main() {
     console.log('🌱 Starting Seed Process...')
@@ -51,13 +23,18 @@ async function main() {
         { username: 'purchasing01', role: Role.USER, section: Department.PURCHASING },
     ]
 
+    const salt = await bcrypt.genSalt(10)
+    const hashedPassword = await bcrypt.hash('password123', salt)
+
     for (const u of users) {
         await prisma.user.upsert({
             where: { username: u.username },
-            update: {},
+            update: {
+                password: hashedPassword // Update existing users to hashed password too
+            },
             create: {
                 username: u.username,
-                password: 'password123',
+                password: hashedPassword,
                 role: u.role,
                 section: u.section,
                 email: `${u.username}@example.com`

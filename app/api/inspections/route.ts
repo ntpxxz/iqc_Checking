@@ -119,6 +119,60 @@ export async function POST(request: Request) {
             console.error("Warehouse DB update error:", warehouseError);
         }
 
+        // 4. Notify Mobile App (Warehouse) - Alert IP:3065
+        if (body.judgment === 'PASS') {
+            try {
+                // Determine target IP from ENV or default
+                const MOBILE_APP_URL = process.env.K_MOBILE_API || 'http://192.168.101.225:3065';
+
+                console.log(`Sending alert to Mobile App at ${MOBILE_APP_URL}...`);
+
+                // Construct the payload for the mobile app
+                const alertPayload = {
+                    type: 'IQC_PASSED',
+                    tasks: [{
+                        taskId: taskId,
+                        invoiceNo: body.invoiceNo,
+                        partNo: body.partNo,
+                        qty: Number(body.qty || 0),
+                        lotNo: body.lotIqc || 'N/A',
+                        status: 'WAITING_PUTAWAY',
+                        timestamp: new Date().toISOString()
+                    }]
+                };
+
+                // Fire and forget (don't block response) - or await if critical
+                // Use /api/notifications as it handles persistence
+                const notifyResponse = await fetch(`${MOBILE_APP_URL}/api/notifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'IQC_PASSED',
+                        title: 'IQC Passed Check',
+                        message: `Part ${body.partNo} (${body.qty} pcs) passed checks. Ready for putaway.`,
+                        data: {
+                            taskId: taskId,
+                            invoiceNo: body.invoiceNo,
+                            partNo: body.partNo,
+                            qty: Number(body.qty || 0),
+                            lotNo: body.lotIqc || 'N/A',
+                            status: 'WAITING_PUTAWAY',
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (!notifyResponse.ok) {
+                    console.warn(`Mobile App notification failed: ${notifyResponse.status} ${notifyResponse.statusText}`);
+                } else {
+                    console.log('Mobile App notified successfully');
+                }
+            } catch (notifyError) {
+                console.error("Mobile App notification error:", notifyError);
+                // Don't fail the request just because notification failed
+            }
+        }
+
         return NextResponse.json(inspection, { status: 201 });
     } catch (error) {
         console.error("Inspection submit error:", error);
