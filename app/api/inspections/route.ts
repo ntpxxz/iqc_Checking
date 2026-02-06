@@ -75,12 +75,12 @@ export async function POST(request: Request) {
                 await prisma.inboundTask.update({
                     where: { id: taskId },
                     data: {
-                        status: body.judgment === 'PASS' ? 'COMPLETED' : 'REJECTED',
+                        status: body.judgment === 'PASS' ? 'IQC_PASSED_WAITING_STOCK' : 'REJECTED',
                         finishedAt: new Date(),
                         actualQty: Number(body.qty || 0)
                     }
                 });
-                console.log(`InboundTask ${taskId} marked as ${body.judgment === 'PASS' ? 'COMPLETED' : 'REJECTED'}`);
+                console.log(`InboundTask ${taskId} marked as ${body.judgment === 'PASS' ? 'IQC_PASSED_WAITING_STOCK' : 'REJECTED'}`);
             } catch (updateError) {
                 console.warn(`Could not update task ${taskId} status:`, updateError);
             }

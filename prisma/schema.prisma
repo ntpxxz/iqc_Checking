@@ -213,6 +213,11 @@ model InboundTask {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   
+  // --- Sampling Details ---
+  samplingType  String?     // Normal, Reduced, Tightened
+  aql           String?     // 0.65, 1.0, 1.5, etc.
+  totalSampling Int?        // Calculated sample size
+  
   // --- Relations ---
   inspection    InspectionResult?
   poItemId      String?
@@ -352,6 +357,9 @@ model invoice {
   createdAt    DateTime @default(now())
   recordedBy   String?
   iqcstatus    String   @default("Pending")
+  samplingType String?
+  aql          String?
+  totalSampling Int?
 
   @@map("invoices")
 }

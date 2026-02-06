@@ -7,7 +7,7 @@ export async function GET() {
         const tasks = await prisma.inboundTask.findMany({
             where: {
                 status: {
-                    in: ['PENDING', 'IQC_WAITING', 'IQC_IN_PROGRESS']
+                    in: ['IQC_WAITING']
                 }
             },
             include: {
@@ -27,8 +27,9 @@ export async function GET() {
             qty: task.planQty,
             iqcStatus: task.status,
             receiver: task.receivedBy || 'System',
-            samplingType: 'Normal',
-            aql: '0.65',
+            samplingType: task.samplingType || 'Normal',
+            aql: task.aql || '0.65',
+            totalSampling: task.totalSampling,
             tagNo: task.tagNo,
             poNo: task.poNo,
             lotNo: task.lotNo,
